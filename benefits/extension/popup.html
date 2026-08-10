@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+      width: 340px;
+      margin: 0;
+      padding: 14px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    h1 { font-size: 16px; margin: 0 0 3px; }
+    .sub { color: #64748b; font-size: 12px; margin: 0 0 12px; }
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 9px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    button:hover { background: #f1f5f9; }
+    .primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+    .primary:hover { background: #1e40af; }
+    .danger { color: #b91c1c; }
+    .status { font-size: 12px; color: #475569; min-height: 16px; margin: 4px 0 8px; }
+    .status.err { color: #b91c1c; }
+    .list { border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 8px; }
+    .site {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+    }
+    .site .n { font-weight: 700; color: #047857; }
+    .site .del { border: none; background: none; width: auto; margin: 0; padding: 2px 6px; color: #b91c1c; cursor: pointer; font-size: 12px; }
+    label { display: block; font-size: 12px; color: #475569; margin: 10px 0 3px; }
+    input[type="url"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 12px;
+      direction: ltr;
+    }
+    .empty { color: #94a3b8; font-size: 12px; text-align: center; padding: 8px 0; }
+    .foot { font-size: 11px; color: #94a3b8; margin-top: 10px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>📥 לכידת הטבות</h1>
+  <p class="sub">קורא בלבד. שום פעולה לא מתבצעת בחשבונות.</p>
+
+  <button class="primary" id="scan">סרוק את העמוד הנוכחי</button>
+  <button id="open-all">פתח את כל המועדונים</button>
+  <div class="status" id="status"></div>
+
+  <div class="list" id="captures"></div>
+
+  <button class="primary" id="send" style="margin-top:10px;">שלח למערכת</button>
+  <button class="danger" id="clear">נקה את הלכידות</button>
+
+  <label for="app-url">כתובת המערכת (פעם אחת)</label>
+  <input type="url" id="app-url" placeholder="https://.../benefits/index.html">
+
+  <p class="foot">
+    ההתחברות למועדונים נשארת אצלכם בדפדפן. אם אתר ניתק אתכם — היכנסו
+    שוב עם הקוד לנייד, והתוסף ימשיך משם.
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

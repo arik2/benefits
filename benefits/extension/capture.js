@@ -1,3 +1,4 @@
+/* קובץ מיוצר — לא לערוך. המקור: benefits/capture.js ; עדכון: node benefits/extension/build.js */
 /*
  * capture.js — לכידת הטבות מעמוד שאתם כבר מחוברים אליו.
  *

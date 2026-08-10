@@ -137,6 +137,37 @@ async function startApp() {
   renderStamp();
   renderBrowse();
   renderManageList();
+  receiveHashImport();
+}
+
+/*
+ * קליטת נתונים שתוסף הדפדפן שלח דרך ה-hash של הכתובת.
+ * ה-hash לא נשלח לשום שרת — הוא חי רק בדפדפן, ומנוקה מיד אחרי הקריאה
+ * כדי שלא יישאר ברשימת הכתובות או בהיסטוריה.
+ */
+function receiveHashImport() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#capimport=')) return;
+
+  let json = '';
+  try {
+    json = decodeURIComponent(escape(atob(hash.slice('#capimport='.length))));
+    JSON.parse(json); // אימות בלבד — התצוגה המקדימה תפענח שוב
+  } catch (err) {
+    history.replaceState(null, '', window.location.pathname);
+    toast('הנתונים מהתוסף לא נקראו. נסו להעתיק ולהדביק ידנית.');
+    return;
+  }
+
+  history.replaceState(null, '', window.location.pathname);
+
+  // מעבר ללשונית הניהול, מילוי התיבה והצגת התצוגה המקדימה
+  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === 'manage'));
+  $$('.panel').forEach((p) => p.classList.toggle('active', p.id === 'panel-manage'));
+  $('#cap-paste').value = json;
+  previewCapture();
+  $('#cap-preview').scrollIntoView({ block: 'center' });
+  toast('התקבלו נתונים מהתוסף — בדקו ואשרו את הייבוא');
 }
 
 /* ---------- לשוניות ---------- */
@@ -639,6 +670,52 @@ function saveBenefitFromForm() {
 let capturedItems = [];
 
 /*
+ * שיוך אוטומטי של מועדון לפי הדומיין שממנו נלכדו הנתונים.
+ * ככה ייבוא מהתוסף לא דורש בחירה ידנית לכל אתר.
+ */
+const DOMAIN_PROVIDERS = [
+  { pattern: /htzone\.co\.il/, provider: 'htzone' },
+  { pattern: /dts\.co\.il|be-plus\.co\.il/, provider: 'behatzdaa' },
+  { pattern: /paisplus\.co\.il|pais\.co\.il/, provider: 'pais' },
+  { pattern: /max\.co\.il/, provider: 'max' },
+  { pattern: /cal-online\.co\.il/, provider: 'cal' },
+  { pattern: /mafteach\.co\.il/, provider: 'mafteah_discount' },
+  { pattern: /discountbank\.co\.il/, provider: 'discount_bank' },
+  { pattern: /isracard\.co\.il|americanexpress\.co\.il/, provider: 'flycard' },
+  { pattern: /elal\.com|elal\.co\.il/, provider: 'elal_matmid' },
+  { pattern: /fox\.co\.il/, provider: 'dreamcard' },
+  { pattern: /onezerobank\.com/, provider: 'onezero' },
+];
+
+function providerForUrl(url) {
+  const hit = DOMAIN_PROVIDERS.find((d) => d.pattern.test(url || ''));
+  return hit ? hit.provider : null;
+}
+
+/*
+ * מיישר את שני הפורמטים לצורה אחת: רשימת פריטים, כל אחד עם המקור
+ * שלו והמועדון שזוהה ממנו.
+ * - לכידה בודדת (בוקמרקלט):  { capturedFrom, items }
+ * - לכידה מרוכזת (תוסף):     { captures: [ { capturedFrom, items }, ... ] }
+ */
+function flattenCapturePayload(payload) {
+  const groups = Array.isArray(payload && payload.captures)
+    ? payload.captures
+    : [Array.isArray(payload) ? { items: payload } : payload];
+
+  const flat = [];
+  for (const group of groups) {
+    if (!group || !Array.isArray(group.items)) continue;
+    const source = group.capturedFrom || '';
+    const provider = providerForUrl(source);
+    for (const item of group.items) {
+      flat.push({ ...item, _source: source, _provider: provider });
+    }
+  }
+  return flat;
+}
+
+/*
  * מציג תצוגה מקדימה של מה שנקלט לפני שמכניסים אותו למסד.
  * הלכידה היא ניחוש מתוך טקסט חופשי, ולכן חובה לאשר פריט-פריט
  * במקום להכניס הכל בעיוורון.
@@ -657,14 +734,18 @@ function previewCapture() {
     return;
   }
 
-  const items = Array.isArray(payload) ? payload : payload.items;
-  if (!Array.isArray(items) || !items.length) {
+  const items = flattenCapturePayload(payload);
+  if (!items.length) {
     box.innerHTML = '<div class="note">לא נמצאו הטבות בתוכן שהודבק.</div>';
     return;
   }
 
   capturedItems = items;
-  const source = payload.capturedFrom || '';
+  const sourceHosts = [...new Set(items.map((i) => {
+    try { return new URL(i._source).hostname.replace(/^www\./, ''); } catch (e) { return null; }
+  }).filter(Boolean))];
+  const source = sourceHosts.join(', ');
+  const provByIdMap = Object.fromEntries((db.providers || []).map((p) => [p.id, p.name]));
 
   const provOptions = (db.providers || [])
     .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
@@ -678,6 +759,7 @@ function previewCapture() {
       : item.kind === 'points' ? 'נקודה לכל ' + item.value + ' ₪' : item.value;
 
     const extras = [];
+    if (item._provider && provByIdMap[item._provider]) extras.push('מועדון: ' + provByIdMap[item._provider]);
     if (item.minSpend) extras.push('מינימום ' + Engine.formatIls(item.minSpend));
     if (item.capPerTx) extras.push('תקרה ' + Engine.formatIls(item.capPerTx));
     if (item.validUntil) extras.push('עד ' + Engine.formatDate(item.validUntil));
@@ -693,21 +775,29 @@ function previewCapture() {
       </label>`;
   }).join('');
 
+  const detectedCount = items.filter((i) => i._provider).length;
+  const providerNote = detectedCount === items.length
+    ? 'המועדון זוהה אוטומטית לכל ההטבות לפי האתר שממנו נלכדו. הבחירה למטה תשמש רק אם תרצו לדרוס.'
+    : detectedCount > 0
+      ? `המועדון זוהה אוטומטית ל-${detectedCount} הטבות. השאר ישויכו לבחירה שלמטה.`
+      : 'בחרו לאיזה מועדון לשייך את ההטבות.';
+
   box.innerHTML = `
     <div class="cap-box">
       <p class="muted small">${items.length} הטבות נקלטו${source ? ' מתוך ' + escapeHtml(source) : ''}</p>
       <div class="cap-list">${rows}</div>
-      <label for="cap-provider">שייך למועדון או כרטיס</label>
+      <p class="muted small">${escapeHtml(providerNote)}</p>
+      <label for="cap-provider">מועדון (לשיוך ידני)</label>
       <select id="cap-provider">${provOptions}</select>
       <label for="cap-categories">קטגוריות</label>
       <select id="cap-categories" multiple size="5">${catOptions}</select>
       <button class="btn primary" id="cap-add">הוסף את המסומנים</button>
     </div>`;
 
-  $('#cap-add').addEventListener('click', () => addCaptured(source));
+  $('#cap-add').addEventListener('click', () => addCaptured());
 }
 
-function addCaptured(source) {
+function addCaptured() {
   const chosen = $$('#cap-preview [data-cap]')
     .filter((cb) => cb.checked)
     .map((cb) => capturedItems[Number(cb.dataset.cap)]);
@@ -717,13 +807,14 @@ function addCaptured(source) {
   const categories = Array.from($('#cap-categories').selectedOptions).map((o) => o.value);
   if (!categories.length) { toast('בחרו לפחות קטגוריה אחת'); return; }
 
-  const provider = $('#cap-provider').value;
+  const fallbackProvider = $('#cap-provider').value;
   const today = new Date().toISOString().slice(0, 10);
 
   chosen.forEach((item, i) => {
     db.benefits.push({
       id: 'cap-' + Date.now().toString(36) + '-' + i,
-      provider,
+      // המועדון שזוהה מהדומיין גובר; הבחירה הידנית משמשת כשאין זיהוי
+      provider: item._provider || fallbackProvider,
       title: item.title || 'הטבה שנקלטה',
       merchants: item.merchant ? [item.merchant] : [],
       categories,
@@ -736,7 +827,7 @@ function addCaptured(source) {
       validUntil: item.validUntil || null,
       // הטקסט המלא נשמר כדי שאפשר יהיה לבדוק מה בדיוק היה כתוב במקור
       conditions: item.rawText || '',
-      source,
+      source: item._source || '',
       tags: ['נקלט אוטומטית'],
       // תמיד לאימות: הלכידה מנחשת מתוך טקסט חופשי ואינה מקור סמכות
       status: 'unverified',
