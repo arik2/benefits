@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>לכידת הטבות — ההטבות שלנו</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+  <style>
+    .bm {
+      display: inline-block;
+      background: var(--brand);
+      color: var(--brand-ink);
+      padding: 13px 26px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 17px;
+      text-decoration: none;
+      cursor: grab;
+    }
+    .bm-wrap { text-align: center; padding: 18px 0; }
+    ol.steps { padding-inline-start: 22px; }
+    ol.steps li { margin-bottom: 10px; }
+    code.inline { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+    textarea.code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>📥 לכידת הטבות</h1>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>למה הכלי הזה קיים</h2>
+    <p class="muted">
+      המערכת לא מתחברת למועדונים בשמכם, ולא תעשה זאת. האתרים דורשים קוד
+      חד-פעמי לנייד בכל כניסה, הדפדפן חוסם קריאת תוכן בין אתרים, ושמירת
+      סיסמאות בשרת היא סיכון שלא שווה את הנוחות.
+    </p>
+    <p class="muted">
+      הפתרון הפוך: <strong>אתם</strong> מתחברים, ואז לוחצים כפתור אחד שקורא
+      את מה שכבר מוצג לכם על המסך. הקוד רץ בדפדפן שלכם בלבד, לא שולח דבר
+      לשום שרת, ולא נוגע בטפסים או בכפתורי רכישה. הוא רק קורא ומעתיק ללוח.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>שלב 1 — גררו את הכפתור לשורת הסימניות</h2>
+    <div class="bm-wrap">
+      <a class="bm" id="bookmarklet" href="#" onclick="return false;">📥 לכוד הטבות</a>
+    </div>
+    <p class="muted small" id="bm-size"></p>
+    <p class="muted">
+      גררו את הכפתור אל שורת הסימניות של הדפדפן. במחשב, אם השורה מוסתרת,
+      אפשר להציג אותה עם <code class="inline">Ctrl+Shift+B</code>
+      (במק: <code class="inline">Cmd+Shift+B</code>).
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>שלב 2 — לכידה</h2>
+    <ol class="steps">
+      <li>היכנסו לאתר המועדון והתחברו כרגיל, כולל קוד לנייד.</li>
+      <li>נווטו לעמוד ההטבות.</li>
+      <li><strong>גללו עד הסוף.</strong> הרבה אתרים טוענים הטבות רק כשגוללים אליהן, ומה שלא נטען לא ייקלט.</li>
+      <li>לחצו על הסימנייה "לכוד הטבות".</li>
+      <li>סמנו מה לשמור, ולחצו "העתק ללוח".</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>שלב 3 — ייבוא למערכת</h2>
+    <p class="muted">
+      חזרו למערכת, לשונית <strong>ניהול</strong>, והדביקו בתיבת
+      "ייבוא מלכידה". בחרו מועדון וקטגוריה, ולחצו הוספה.
+    </p>
+    <a class="btn primary" href="index.html" style="display:block;text-align:center;text-decoration:none;">← חזרה למערכת</a>
+  </div>
+
+  <div class="card">
+    <h2>אם הסימנייה לא עובדת</h2>
+    <p class="muted">
+      חלק מהאתרים חוסמים סימניות שמריצות קוד. במקרה כזה: פתחו את כלי
+      המפתחים (<code class="inline">F12</code>), עברו ללשונית Console,
+      הדביקו את הקוד שלמטה ולחצו Enter.
+    </p>
+    <button class="btn" id="copy-code">העתק את קוד הלכידה</button>
+    <textarea class="code" id="raw-code" rows="4" readonly></textarea>
+  </div>
+
+  <div class="card">
+    <h2>מה הכלי מזהה</h2>
+    <ul class="muted" style="padding-inline-start:20px;">
+      <li>אחוזי הנחה ואחוזי החזר או צבירה</li>
+      <li>סכומים קבועים בשקלים</li>
+      <li>הטבות 1+1</li>
+      <li>יחסי צבירת נקודות ("נקודה על כל 4 ₪")</li>
+      <li>מינימום קנייה, תקרה לעסקה ותאריך תפוגה, כשהם מופיעים בטקסט</li>
+      <li>שם בית העסק, מכותרת הכרטיס או מהלוגו</li>
+    </ul>
+    <p class="warn">
+      הזיהוי הוא ניחוש מושכל מתוך טקסט חופשי, ולכן הוא לא מושלם. כל מה
+      שנקלט נכנס למערכת בסטטוס "לאימות" ומחייב בדיקה שלכם לפני שסומכים עליו.
+    </p>
+  </div>
+
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/*
+ * הבוקמרקלט נבנה מקוד המקור עצמו, כדי שלא תהיה גרסה כפולה שמתיישנת.
+ * ההערות מוסרות רק כדי לקצר את כתובת הסימנייה.
+ */
+(async function () {
+  const toast = (msg) => {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 2600);
+  };
+
+  try {
+    const res = await fetch('capture.js', { cache: 'no-store' });
+    if (!res.ok) throw new Error('לא ניתן לטעון את קוד הלכידה');
+    const source = await res.text();
+
+    // מסירים רק הערות בלוק שנמצאות בתחילת שורה, כדי לא לפגוע בביטויים רגולריים
+    const stripped = source
+      .replace(/^\s*\/\*[\s\S]*?\*\/\s*$/gm, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/\n{2,}/g, '\n')
+      .trim();
+
+    const code = 'javascript:' + encodeURIComponent('(function(){' + stripped + '})();');
+    const link = document.getElementById('bookmarklet');
+    link.href = code;
+
+    document.getElementById('raw-code').value = stripped;
+    document.getElementById('bm-size').textContent =
+      `אורך הסימנייה: ${Math.round(code.length / 1024)} ק"ב`;
+
+    document.getElementById('copy-code').addEventListener('click', () => {
+      const ta = document.getElementById('raw-code');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(
+        () => toast('הקוד הועתק'),
+        () => { document.execCommand('copy'); toast('הקוד הועתק'); }
+      );
+    });
+  } catch (err) {
+    document.getElementById('bm-size').textContent = 'שגיאה: ' + err.message;
+  }
+})();
+</script>
+</body>
+</html>

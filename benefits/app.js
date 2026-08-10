@@ -510,6 +510,7 @@ function bindManage() {
   });
 
   $('#btn-del-examples').addEventListener('click', deleteExamples);
+  $('#cap-parse').addEventListener('click', previewCapture);
 
   $('#f-save').addEventListener('click', saveBenefitFromForm);
   $('#f-clear').addEventListener('click', clearForm);
@@ -631,6 +632,126 @@ function saveBenefitFromForm() {
   renderManageList();
   renderBrowse();
   toast(idx >= 0 ? 'ההטבה עודכנה' : 'ההטבה נוספה');
+}
+
+/* ---------- ייבוא מלכידה ---------- */
+
+let capturedItems = [];
+
+/*
+ * מציג תצוגה מקדימה של מה שנקלט לפני שמכניסים אותו למסד.
+ * הלכידה היא ניחוש מתוך טקסט חופשי, ולכן חובה לאשר פריט-פריט
+ * במקום להכניס הכל בעיוורון.
+ */
+function previewCapture() {
+  const raw = $('#cap-paste').value.trim();
+  const box = $('#cap-preview');
+
+  if (!raw) { toast('הדביקו קודם את התוכן'); return; }
+
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch (err) {
+    box.innerHTML = '<div class="note">מה שהודבק אינו בפורמט הצפוי. ודאו שהעתקתם מכלי הלכידה.</div>';
+    return;
+  }
+
+  const items = Array.isArray(payload) ? payload : payload.items;
+  if (!Array.isArray(items) || !items.length) {
+    box.innerHTML = '<div class="note">לא נמצאו הטבות בתוכן שהודבק.</div>';
+    return;
+  }
+
+  capturedItems = items;
+  const source = payload.capturedFrom || '';
+
+  const provOptions = (db.providers || [])
+    .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  const catOptions = (db.categories || [])
+    .map((c) => `<option value="${c.id}">${c.icon} ${escapeHtml(c.label)}</option>`).join('');
+
+  const rows = items.map((item, i) => {
+    const val = item.kind === 'percent' || item.kind === 'cashback' ? item.value + '%'
+      : item.kind === 'fixed' ? Engine.formatIls(item.value)
+      : item.kind === 'bogo' ? '1+1'
+      : item.kind === 'points' ? 'נקודה לכל ' + item.value + ' ₪' : item.value;
+
+    const extras = [];
+    if (item.minSpend) extras.push('מינימום ' + Engine.formatIls(item.minSpend));
+    if (item.capPerTx) extras.push('תקרה ' + Engine.formatIls(item.capPerTx));
+    if (item.validUntil) extras.push('עד ' + Engine.formatDate(item.validUntil));
+    if (item.merchant) extras.push('בית עסק: ' + item.merchant);
+
+    return `
+      <label class="cap-row">
+        <input type="checkbox" data-cap="${i}" checked>
+        <span class="cap-val">${escapeHtml(val)}</span>
+        <span class="cap-txt">${escapeHtml(item.title || '')}
+          ${extras.length ? `<em>${escapeHtml(extras.join(' · '))}</em>` : ''}
+        </span>
+      </label>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="cap-box">
+      <p class="muted small">${items.length} הטבות נקלטו${source ? ' מתוך ' + escapeHtml(source) : ''}</p>
+      <div class="cap-list">${rows}</div>
+      <label for="cap-provider">שייך למועדון או כרטיס</label>
+      <select id="cap-provider">${provOptions}</select>
+      <label for="cap-categories">קטגוריות</label>
+      <select id="cap-categories" multiple size="5">${catOptions}</select>
+      <button class="btn primary" id="cap-add">הוסף את המסומנים</button>
+    </div>`;
+
+  $('#cap-add').addEventListener('click', () => addCaptured(source));
+}
+
+function addCaptured(source) {
+  const chosen = $$('#cap-preview [data-cap]')
+    .filter((cb) => cb.checked)
+    .map((cb) => capturedItems[Number(cb.dataset.cap)]);
+
+  if (!chosen.length) { toast('לא סומנה אף הטבה'); return; }
+
+  const categories = Array.from($('#cap-categories').selectedOptions).map((o) => o.value);
+  if (!categories.length) { toast('בחרו לפחות קטגוריה אחת'); return; }
+
+  const provider = $('#cap-provider').value;
+  const today = new Date().toISOString().slice(0, 10);
+
+  chosen.forEach((item, i) => {
+    db.benefits.push({
+      id: 'cap-' + Date.now().toString(36) + '-' + i,
+      provider,
+      title: item.title || 'הטבה שנקלטה',
+      merchants: item.merchant ? [item.merchant] : [],
+      categories,
+      variants: [],
+      kind: item.kind,
+      value: item.value,
+      capPerTx: item.capPerTx == null ? null : item.capPerTx,
+      minSpend: item.minSpend || 0,
+      requiresCard: null,
+      validUntil: item.validUntil || null,
+      // הטקסט המלא נשמר כדי שאפשר יהיה לבדוק מה בדיוק היה כתוב במקור
+      conditions: item.rawText || '',
+      source,
+      tags: ['נקלט אוטומטית'],
+      // תמיד לאימות: הלכידה מנחשת מתוך טקסט חופשי ואינה מקור סמכות
+      status: 'unverified',
+      checkedAt: today,
+    });
+  });
+
+  saveDb();
+  buildSelects();
+  renderManageList();
+  renderBrowse();
+  $('#cap-paste').value = '';
+  $('#cap-preview').innerHTML = '';
+  capturedItems = [];
+  toast(`${chosen.length} הטבות נוספו בסטטוס "לאימות"`);
 }
 
 function deleteExamples() {
