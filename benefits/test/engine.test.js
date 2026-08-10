@@ -96,6 +96,72 @@ check('חיתוך רלוונטיות מסנן התאמות חלשות', (() => {
 check('שאלה על מלון לא מחזירה את הטבת החניה',
   !E.search(db, 'הנחות על מלון בארץ', 2000, TODAY).some((r) => r.benefit.id === 'mafteah-parking'));
 
+/* --- פירוק שאלה חופשית (מצב צ'אט) --- */
+
+const pq = (t) => E.parseQuery(db, t, TODAY);
+
+check('פירוק: בית עסק וסכום', (() => {
+  const p = pq('אני קונה בפוקס ב400 שקל');
+  return p.merchant === 'פוקס' && p.amount === 400;
+})(), JSON.stringify(pq('אני קונה בפוקס ב400 שקל').merchant));
+
+check('פירוק: סכום דבוק לאות עם שגיאת הקלדה', pq('קנייה בפוקס בז400').amount === 400);
+check('פירוק: סכום עם פסיק אלפים', pq('מקרר ב-4,000').amount === 4000);
+check('פירוק: בית עסק דו-מילי מנצח חד-מילי', pq('קנייה בפוקס הום ב300').merchant === 'פוקס הום');
+check('פירוק: אחוז אינו סכום', pq('הנחה של 20% בפוקס').amount === 0);
+
+check('פירוק: "מחר" הופך לתאריך', (() => {
+  const p = pq('סינמה סיטי מחר');
+  return p.date && p.date.toISOString().slice(0, 10) === '2026-08-11';
+})());
+
+check('פירוק: יום בשבוע הופך למופע הבא שלו', (() => {
+  const p = pq('מלון ביום שישי ב2000');   // TODAY הוא יום שני 10.08
+  return p.date && p.date.toISOString().slice(0, 10) === '2026-08-14' && p.amount === 2000;
+})());
+
+check('פירוק: תאריך מפורש אינו נבלע בסכום', (() => {
+  const p = pq('טיסה ב5000 ב31.12');
+  return p.amount === 5000 && p.date && p.date.toISOString().slice(0, 10) === '2026-12-31';
+})());
+
+check('פירוק: "בשבת" מזוהה', (() => {
+  const p = pq('בשבת מלון לדוגמה ב1500');
+  return p.date && p.date.getDay() === 6 && p.merchant === 'מלון לדוגמה';
+})());
+
+/* --- הרכבת תוכנית קנייה --- */
+
+const foxPlan = E.composePlan(db, pq('קנייה בפוקס ב400 שקל'), TODAY);
+
+check('תוכנית פוקס: ההמלצה הראשית היא השובר (ודאי 80) ולא יום ההולדת (אולי 120)',
+  foxPlan.primary && foxPlan.primary.benefitId === 'htzone-dreamcard-voucher' && foxPlan.primary.saving === 80,
+  foxPlan.primary && `${foxPlan.primary.benefitId} / ${foxPlan.primary.saving}`);
+
+check('תוכנית פוקס: יש צעדי ביצוע מהרשומה',
+  foxPlan.primary.steps.length >= 3 && /הייטקזון/.test(foxPlan.primary.steps[0]));
+
+check('תוכנית פוקס: השאלה הפתוחה מוצגת עם הפוטנציאל',
+  foxPlan.question && foxPlan.question.upTo === 120 && foxPlan.question.choices.length === 4);
+
+check('תוכנית פוקס: נתון לא מאומת מסומן', foxPlan.primary.verified === false);
+
+const foxBirthday = E.composePlan(db, pq('קנייה בפוקס ב400 שקל'), TODAY, { 'dreamcard-main': 'birthday' });
+check('אחרי בחירת יום הולדת: ההמלצה מתחלפת ל-30% והשאלה נסגרת',
+  foxBirthday.primary.benefitId === 'dreamcard-main' && foxBirthday.primary.saving === 120
+  && foxBirthday.question === null,
+  `${foxBirthday.primary.benefitId} / ${foxBirthday.primary.saving}`);
+
+check('שאלה בלי סכום: אין המלצה כמותית ויש דגל noAmount', (() => {
+  const p = E.composePlan(db, pq('סרט בקולנוע'), TODAY);
+  return p.noAmount === true && p.primary === null && p.rows.length > 0;
+})());
+
+check('בית עסק לא מוכר: נסיגה לחיפוש כללי עם דגל merchantMiss', (() => {
+  const p = E.composePlan(db, { merchant: 'חנות עלומה', amount: 500, date: null, text: 'חנות עלומה מלון' }, TODAY);
+  return p.merchantMiss === true && p.rows.length > 0;
+})());
+
 /* --- דירוג בחיפוש חופשי --- */
 
 function topOf(query) {

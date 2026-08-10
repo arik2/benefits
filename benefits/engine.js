@@ -505,6 +505,220 @@ function search(db, query, amount, today, opts) {
   return matched.filter((r, i) => i === 0 || r.score >= cutoff);
 }
 
+/* ---------- הבנת שאלה חופשית ---------- */
+
+const DAY_WORDS = { 'ראשון': 0, 'שני': 1, 'שלישי': 2, 'רביעי': 3, 'חמישי': 4, 'שישי': 5, 'שבת': 6 };
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function nextDayOfWeek(base, dow) {
+  const d = dayOnly(base);
+  const diff = (dow - d.getDay() + 7) % 7 || 7;
+  return addDays(d, diff);
+}
+
+/*
+ * מפרק משפט חופשי ("קנייה בפוקס ב-400 שקל ביום שישי") לחלקים:
+ * בית עסק, סכום ותאריך. מה שלא זוהה נשאר null והמערכת מסתדרת בלעדיו.
+ */
+function parseQuery(db, rawText, today) {
+  const base = today ? dayOnly(today) : dayOnly(new Date());
+
+  /*
+   * התאריך והסכום מחולצים מהטקסט הגולמי, לא מהמנורמל:
+   * normalize הופך נקודות ופסיקים לרווחים, ואז "31.12" מתפרק לשני
+   * מספרים ו"4,000" נהיה "4 000" שנקרא בטעות כ-000.
+   */
+  let raw = String(rawText || '').replace(/(\d),(?=\d{3})/g, '$1');
+
+  /* תאריך מפורש (31.12 או 31/12/2026) — מזוהה ומוסר לפני חילוץ הסכום,
+     אחרת "31" היה נקרא כסכום */
+  let date = null;
+  const explicit = raw.match(/(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?/);
+  if (explicit) {
+    let [, d, mo, y] = explicit;
+    y = y ? (y.length === 2 ? '20' + y : y) : String(base.getFullYear());
+    const cand = new Date(Number(y), Number(mo) - 1, Number(d));
+    if (!isNaN(cand.getTime())) {
+      if (!explicit[3] && cand < base) cand.setFullYear(cand.getFullYear() + 1);
+      date = cand;
+    }
+    raw = raw.replace(explicit[0], ' ');
+  }
+
+  const text = normalize(raw);
+
+  if (!date) {
+    if (/מחרתיים/.test(text)) date = addDays(base, 2);
+    else if (/מחר/.test(text)) date = addDays(base, 1);
+    else {
+      /* "ביום שישי" / "בשבת" — המופע הבא של אותו יום.
+         נבדק על הטקסט המנורמל, שבו אותיות סופיות כבר קופלו */
+      const dw = text.match(/(?:ביומ|יומ)\s+(ראשונ|שני|שלישי|רביעי|חמישי|שישי|שבת)/)
+        || (/(?:^|\s)בשבת(?:\s|$)/.test(text) ? [null, 'שבת'] : null);
+      if (dw) {
+        const key = { 'ראשונ': 'ראשון', 'שני': 'שני', 'שלישי': 'שלישי', 'רביעי': 'רביעי', 'חמישי': 'חמישי', 'שישי': 'שישי', 'שבת': 'שבת' }[dw[1]];
+        date = nextDayOfWeek(base, DAY_WORDS[key]);
+      }
+    }
+  }
+
+  /* סכום: המספר הראשון בן 2-6 ספרות, גם כשהוא דבוק לאות ("ב400").
+     אחוזים אינם סכום. */
+  let amount = 0;
+  const m = raw.match(/(?:^|[^\d+])(\d{2,6})(?!\s*%|\d)/);
+  if (m) amount = parseInt(m[1], 10);
+
+  /* בית עסק: ההתאמה הארוכה ביותר מבין בתי העסק המוכרים למערכת */
+  const tokens = text.split(' ').filter(Boolean);
+  let merchant = null;
+  let merchantWords = 0;
+  for (const name of allMerchants(db)) {
+    const words = wordsOf(normalize(name));
+    if (!words.length) continue;
+    const allFound = words.every((w) => tokens.some((t) => wordsMatch(t, w)));
+    if (allFound && words.length > merchantWords) {
+      merchant = name;
+      merchantWords = words.length;
+    }
+  }
+
+  return { merchant, amount, date, text: rawText };
+}
+
+/* ---------- הרכבת תשובה: תוכנית קנייה ---------- */
+
+function isVoucherBenefit(b) {
+  if (b.voucher === true) return true;
+  const hay = normalize(b.title + ' ' + (b.tags || []).join(' '));
+  return /שובר|תו קנייה|תווים/.test(hay);
+}
+
+/* צעדי ביצוע: מהרשומה עצמה אם הוגדרו, אחרת נבנים לפי סוג ההטבה */
+function stepsFor(row, amount, provider) {
+  const b = row.benefit;
+  if (Array.isArray(b.howTo) && b.howTo.length) return b.howTo;
+
+  const sv = row.saving;
+  const steps = [];
+  if (isVoucherBenefit(b) && sv.computable && amount > 0) {
+    const pay = amount - sv.amount;
+    steps.push(`קנו באתר ${provider.name} שוברים בשווי ${formatIls(amount)} — תשלמו בערך ${formatIls(pay)}`);
+    steps.push('בקופה שלמו עם השוברים במקום בכרטיס');
+    steps.push('אם סכום הקנייה יוצא מעל השוברים — השלימו את ההפרש בכרטיס עם ההטבה הבאה ברשימה');
+  } else {
+    switch (b.kind) {
+      case 'cashback':
+        if (b.requiresCard) steps.push(`שלמו עם ${b.requiresCard}`);
+        steps.push('ההחזר או הצבירה נרשמים אחרי החיוב — לא תראו הנחה בקופה');
+        break;
+      case 'percent':
+      case 'fixed':
+        if (b.requiresCard) steps.push(`שלמו עם ${b.requiresCard}`);
+        else steps.push(`ההטבה דרך ${provider.name} — בדקו באתר או באפליקציה שלהם איך מממשים לפני התשלום`);
+        break;
+      case 'bogo':
+        steps.push('קחו שני פריטים — השני חינם. בדקו בתנאים על מה ההטבה חלה');
+        break;
+      case 'points':
+        if (b.requiresCard) steps.push(`שלמו עם ${b.requiresCard} — הנקודות נצברות אוטומטית`);
+        break;
+      default:
+        break;
+    }
+  }
+  return steps;
+}
+
+/*
+ * הלב של מצב הצ'אט: לוקח שאלה מפורקת ומרכיב תשובה אחת ברורה.
+ *
+ * העיקרון: ההמלצה הראשית היא תמיד האפשרות הטובה ביותר שהיא ודאית.
+ * אפשרות שדורשת הבהרה ("אולי יום הולדת?") לעולם לא נבחרת בשקט —
+ * היא מוצגת כשאלה, וכשעונים עליה התוכנית מתעדכנת.
+ */
+function composePlan(db, parsed, today, variantPicks) {
+  const date = parsed.date || today;
+  const opts = { date, variantPicks: variantPicks || {} };
+
+  let rows = parsed.merchant
+    ? searchByMerchant(db, parsed.merchant, parsed.amount, today, opts)
+    : search(db, parsed.text, parsed.amount, today, opts);
+  let merchantMiss = false;
+
+  if (parsed.merchant && !rows.length) {
+    rows = search(db, parsed.text, parsed.amount, today, opts);
+    merchantMiss = true;
+  }
+
+  if (!rows.length) {
+    return { rows: [], parsed, primary: null, question: null, alternatives: [], merchantMiss, noAmount: !parsed.amount };
+  }
+
+  const provById = Object.fromEntries((db.providers || []).map((p) => [p.id, p]));
+
+  const priced = rows.filter((r) => r.saving.computable && r.evaluation.active);
+  const certain = priced.filter((r) => !r.evaluation.needsChoice && !r.saving.isUpperBound);
+  const bestCertain = certain[0] ? certain.reduce((a, b) => (b.saving.amount > a.saving.amount ? b : a)) : null;
+  const bestAny = priced[0] ? priced.reduce((a, b) => (b.saving.amount > a.saving.amount ? b : a)) : null;
+
+  let primary = null;
+  if (bestCertain && parsed.amount > 0) {
+    const provider = provById[bestCertain.benefit.provider] || { name: '' };
+    primary = {
+      benefitId: bestCertain.benefit.id,
+      title: bestCertain.benefit.title,
+      providerName: provider.name,
+      saving: bestCertain.saving.amount,
+      savingLabel: bestCertain.saving.label,
+      steps: stepsFor(bestCertain, parsed.amount, provider),
+      verified: bestCertain.benefit.status === 'verified',
+    };
+  }
+
+  /* שאלה פתוחה: יש אפשרות שאולי עדיפה, אבל תלויה במשהו שרק המשתמש יודע */
+  let question = null;
+  if (bestAny && bestAny.evaluation.needsChoice
+      && (!bestCertain || bestAny.saving.amount > bestCertain.saving.amount)) {
+    question = {
+      benefitId: bestAny.benefit.id,
+      title: bestAny.benefit.title,
+      upTo: bestAny.saving.amount,
+      choices: bestAny.evaluation.choices.map((c) => ({
+        id: c.id,
+        label: c.label,
+        saving: c.saving.computable ? c.saving.amount : null,
+      })),
+    };
+  }
+
+  const alternatives = priced
+    .filter((r) => (!primary || r.benefit.id !== primary.benefitId)
+      && (!question || r.benefit.id !== question.benefitId))
+    .slice(0, 3)
+    .map((r) => ({
+      title: r.benefit.title,
+      providerName: (provById[r.benefit.provider] || { name: '' }).name,
+      saving: r.saving.computable ? r.saving.amount : null,
+      savingLabel: r.saving.label,
+      isUpperBound: !!r.saving.isUpperBound,
+    }));
+
+  return {
+    rows,
+    parsed,
+    primary,
+    question,
+    alternatives,
+    merchantMiss,
+    noAmount: !parsed.amount,
+  };
+}
+
 /* ---------- פורמט ---------- */
 
 /*
@@ -551,6 +765,7 @@ const Engine = {
   scopesOf, activeOn, expiryState,
   calcSaving, evaluate, pointValueFor,
   rankByCategory, search, searchByMerchant, allMerchants,
+  parseQuery, composePlan, isVoucherBenefit,
   describeRate, formatIls, formatDate, DAY_NAMES,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = Engine;

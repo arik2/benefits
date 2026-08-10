@@ -204,26 +204,19 @@ function buildSelects() {
     .join('');
 
   const examples = [
-    { merchant: 'פוקס', amount: 400 },
-    { q: 'איפה כדאי לקנות מקרר', amount: 4000 },
-    { q: 'הנחות על מלון בארץ', amount: 2000 },
-    { q: 'סרט בקולנוע' },
-    { q: 'הוצאות בחול', amount: 5000 },
-    { q: 'עמלות בנק' },
+    'קנייה בפוקס ב-400 שקל',
+    'מקרר ב-4,000',
+    'מלון ביום שישי ב-2,000',
+    'סרט בקולנוע',
+    'הוצאות בחו"ל ב-5,000',
   ];
   $('#ask-examples').innerHTML = examples
-    .map((ex, i) => {
-      const label = ex.merchant ? `${ex.merchant} ב-${ex.amount} ₪` : ex.q;
-      return `<button class="chip" data-example="${i}">${escapeHtml(label)}</button>`;
-    })
+    .map((ex, i) => `<button class="chip" data-example="${i}">${escapeHtml(ex)}</button>`)
     .join('');
   $('#ask-examples').addEventListener('click', (e) => {
     const btn = e.target.closest('.chip');
     if (!btn) return;
-    const ex = examples[Number(btn.dataset.example)];
-    $('#ask-merchant').value = ex.merchant || '';
-    $('#ask-q').value = ex.q || '';
-    $('#ask-amount').value = ex.amount || '';
+    $('#ask-q').value = examples[Number(btn.dataset.example)];
     runAsk();
   });
 }
@@ -358,49 +351,96 @@ function rerunLastQuery() {
   else if (lastQuery === 'compare') runCompare(true);
 }
 
-/* ---------- שאלה חופשית ובית עסק ---------- */
+/* ---------- שאלה חופשית — שורה אחת כמו בצ'אט ---------- */
 
 function bindAsk() {
   $('#ask-go').addEventListener('click', () => runAsk());
   $('#ask-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') runAsk(); });
-  $('#ask-merchant').addEventListener('keydown', (e) => { if (e.key === 'Enter') runAsk(); });
 }
 
+/*
+ * מפרק את השורה שהמשתמש כתב, מרכיב תוכנית קנייה, ומציג אותה
+ * כתשובה אחת ברורה — ומתחתיה כרטיסי כל האפשרויות למי שרוצה לצלול.
+ */
 function runAsk(keepPicks) {
-  const merchant = $('#ask-merchant').value.trim();
   const q = $('#ask-q').value.trim();
-  const amount = parseFloat($('#ask-amount').value) || 0;
-
-  if (!merchant && !q) { toast('כתבו שם חנות או שאלה'); return; }
+  if (!q) { toast('כתבו מה אתם רוצים לקנות, איפה ובכמה'); return; }
   if (!keepPicks) variantPicks = {};
   lastQuery = 'ask';
 
-  const opts = queryOpts('#ask-date');
+  const parsed = Engine.parseQuery(db, q, TODAY);
+  const plan = Engine.composePlan(db, parsed, TODAY, variantPicks);
 
-  // שם חנות הוא אות חזק וספציפי, ולכן מקבל עדיפות על שאלה חופשית.
-  let rows;
-  let emptyText;
-  if (merchant) {
-    rows = Engine.searchByMerchant(db, merchant, amount, TODAY, opts);
-    emptyText = `לא נמצאה הטבה רשומה עבור "${merchant}". `
-      + 'ייתכן שיש הטבה כללית על הקטגוריה — נסו לחפש בשאלה חופשית, '
-      + 'או הוסיפו את ההטבה בלשונית "ניהול".';
-    // אם אין התאמה לבית העסק, נופלים לחיפוש חופשי במקום להחזיר מסך ריק.
-    if (!rows.length) {
-      const fallback = Engine.search(db, merchant + ' ' + q, amount, TODAY, opts);
-      if (fallback.length) {
-        renderResults($('#ask-results'), fallback, emptyText);
-        prependNote($('#ask-results'),
-          `אין הטבה שרשומה במפורש על "${escapeHtml(merchant)}". אלה הטבות כלליות שאולי רלוונטיות — בדקו את התנאים.`);
-        return;
-      }
-    }
-  } else {
-    rows = Engine.search(db, q, amount, TODAY, opts);
-    emptyText = 'לא נמצאה הטבה מתאימה. נסו מילים אחרות, או הוסיפו את ההטבה בלשונית "ניהול".';
+  // "הבנתי: פוקס · 400 ₪ · יום שישי" — כדי שטעות פירוק תיראה מיד
+  const parsedBits = [];
+  if (parsed.merchant) parsedBits.push('🏬 ' + parsed.merchant);
+  if (parsed.amount) parsedBits.push(Engine.formatIls(parsed.amount));
+  if (parsed.date) parsedBits.push('📅 ' + Engine.formatDate(parsed.date.toISOString().slice(0, 10)));
+  const parsedEl = $('#ask-parsed');
+  parsedEl.hidden = !parsedBits.length;
+  parsedEl.textContent = parsedBits.length ? 'הבנתי: ' + parsedBits.join(' · ') : '';
+
+  $('#ask-answer').innerHTML = renderPlan(plan);
+
+  const emptyText = 'לא נמצאה הטבה מתאימה. נסו מילים אחרות, או הוסיפו את ההטבה בלשונית "ניהול".';
+  renderResults($('#ask-results'), plan.rows, plan.rows.length ? '' : emptyText);
+  if (plan.merchantMiss && plan.rows.length) {
+    prependNote($('#ask-results'),
+      `אין הטבה שרשומה במפורש על "${escapeHtml(parsed.merchant)}". אלה הטבות כלליות שאולי רלוונטיות.`);
+  }
+}
+
+function renderPlan(plan) {
+  if (!plan.rows.length) return '';
+
+  const parts = [];
+
+  if (plan.noAmount) {
+    parts.push(`<div class="plan-note">💡 כתבו גם סכום ("ב-400 שקל") ואחשב כמה תחסכו בכל אפשרות.</div>`);
   }
 
-  renderResults($('#ask-results'), rows, emptyText);
+  if (plan.primary) {
+    const p = plan.primary;
+    const steps = p.steps.length
+      ? `<ol class="plan-steps">${p.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>`
+      : '';
+    const verify = p.verified ? '' : `<div class="plan-caveat">הנתון מסומן "לאימות" — בדקו את המספר באתר המועדון לפני שסומכים עליו.</div>`;
+    parts.push(`
+      <div class="plan">
+        <div class="plan-head">
+          <span class="plan-label">הכי משתלם עכשיו</span>
+          <span class="plan-saving">חיסכון ~${Engine.formatIls(p.saving)}</span>
+        </div>
+        <div class="plan-title">${escapeHtml(p.title)} <span class="plan-provider">(${escapeHtml(p.providerName)})</span></div>
+        ${steps}
+        ${verify}
+      </div>`);
+  }
+
+  if (plan.question) {
+    const qc = plan.question;
+    const chips = qc.choices.map((c) => {
+      const val = c.saving != null ? Engine.formatIls(c.saving) : '';
+      return `<button class="chip choice-chip" data-pick-benefit="${escapeHtml(qc.benefitId)}" data-pick-variant="${escapeHtml(c.id)}">
+                ${escapeHtml(c.label)} <span class="chip-val">${val}</span>
+              </button>`;
+    }).join('');
+    parts.push(`
+      <div class="plan ask">
+        <div class="plan-title">יכול להיות אפילו יותר משתלם — עד ${Engine.formatIls(qc.upTo)} — תלוי במצב שלכם:</div>
+        <div class="chips">${chips}</div>
+      </div>`);
+  }
+
+  if (plan.alternatives.length && plan.primary) {
+    const alts = plan.alternatives.map((a) => {
+      const val = a.saving != null ? `${a.isUpperBound ? 'עד ' : ''}${Engine.formatIls(a.saving)}` : a.savingLabel;
+      return `<li>${escapeHtml(a.title)} (${escapeHtml(a.providerName)}) — ${escapeHtml(val)}</li>`;
+    }).join('');
+    parts.push(`<div class="plan-alts"><span>עוד אפשרויות:</span><ul>${alts}</ul></div>`);
+  }
+
+  return parts.join('');
 }
 
 function prependNote(container, html) {

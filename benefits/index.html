@@ -40,30 +40,19 @@
 
   <main>
 
-    <!-- ===== שאלה חופשית ===== -->
+    <!-- ===== שאלה חופשית — שורה אחת כמו בצ'אט ===== -->
     <section id="panel-ask" class="panel active">
-      <div class="card">
-        <label for="ask-merchant">איפה אתם קונים? (שם החנות או המלון)</label>
-        <input type="text" id="ask-merchant" list="merchant-list" placeholder="למשל: פוקס" autocomplete="off">
-        <datalist id="merchant-list"></datalist>
-
-        <label for="ask-q">או שאלה חופשית</label>
-        <input type="text" id="ask-q" placeholder="למשל: איפה כדאי לקנות מקרר?" autocomplete="off">
-
-        <div class="grid2">
-          <div>
-            <label for="ask-amount">סכום (₪)</label>
-            <input type="number" id="ask-amount" min="0" step="10" placeholder="400">
-          </div>
-          <div>
-            <label for="ask-date">תאריך</label>
-            <input type="date" id="ask-date">
-          </div>
+      <div class="card chat-card">
+        <div class="chat-line">
+          <input type="text" id="ask-q" list="merchant-list" enterkeyhint="send"
+                 placeholder="למשל: קנייה בפוקס ב-400 שקל" autocomplete="off">
+          <button class="btn primary chat-send" id="ask-go" aria-label="שאל">➤</button>
         </div>
-
-        <button class="btn primary" id="ask-go">בדוק</button>
+        <datalist id="merchant-list"></datalist>
+        <div class="parsed-line" id="ask-parsed" hidden></div>
         <div class="chips" id="ask-examples"></div>
       </div>
+      <div id="ask-answer"></div>
       <div id="ask-results" class="results"></div>
     </section>
 

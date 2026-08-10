@@ -325,6 +325,54 @@ input:focus, select:focus, textarea:focus {
 
 .hint { font-size: 12px; color: var(--ink-soft); margin: 4px 0 0; }
 
+/* מצב צ'אט — שורה אחת ותוכנית קנייה */
+.chat-line { display: flex; gap: 8px; }
+.chat-line input { flex: 1; margin: 0; font-size: 16px; }
+.chat-send { width: 52px; flex: none; padding: 0; font-size: 18px; }
+.parsed-line { font-size: 13px; color: var(--ink-soft); margin-top: 8px; }
+
+.plan {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 15px;
+  margin-top: 12px;
+  border-inline-start: 4px solid var(--good);
+  box-shadow: var(--shadow);
+}
+.plan.ask { border-inline-start-color: var(--warn); }
+.plan-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.plan-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--good);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.plan-saving { font-size: 17px; font-weight: 800; color: var(--good); white-space: nowrap; }
+.plan-title { font-size: 15px; font-weight: 700; margin-top: 6px; line-height: 1.45; }
+.plan-provider { font-weight: 400; color: var(--ink-soft); }
+.plan-steps { margin: 10px 0 0; padding-inline-start: 20px; font-size: 14px; line-height: 1.65; }
+.plan-steps li { margin-bottom: 4px; }
+.plan-caveat {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.plan-note {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.plan-alts { font-size: 13px; color: var(--ink-soft); margin-top: 10px; padding: 0 4px; }
+.plan-alts ul { margin: 4px 0 0; padding-inline-start: 18px; }
+.plan-alts li { margin-bottom: 3px; }
+
 /* ייבוא מלכידה */
 .cap-box { margin-top: 12px; }
 .cap-list {
