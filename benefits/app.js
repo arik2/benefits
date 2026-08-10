@@ -1069,7 +1069,7 @@ function bindSettings() {
 
   const cfg = syncConfig();
   $('#s-token').value = cfg.token || '';
-  $('#s-repo').value = cfg.repo || 'arik2/2015_04_Web';
+  $('#s-repo').value = cfg.repo || 'arik2/benefits';
   $('#s-branch').value = cfg.branch || 'master';
 
   $('#s-save-sync').addEventListener('click', () => {
