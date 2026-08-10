@@ -71,6 +71,53 @@ check('ג\'יבריש לא מחזיר תוצאות',
 check('מילות קישור בלבד לא מחזירות תוצאות',
   E.search(db, 'איפה כדאי לי', 0, TODAY).length === 0);
 
+/* --- גזירת שורש בעברית --- */
+
+check('סיומת רבים: "מזוודות" תואם "מזוודה"', E.wordsMatch('מזוודות', 'מזוודה'));
+check('אות שימוש: "בטיסה" תואם "טיסה"', E.wordsMatch('בטיסה', 'טיסה'));
+check('אות סופית: "מלונות" תואם "מלון"', E.wordsMatch('מלונות', 'מלון'));
+check('אות שימוש: "בסופש" תואם "סופש"', E.wordsMatch('בסופש', 'סופש'));
+check('"סמארטפונים" תואם "סמארטפון"', E.wordsMatch('סמארטפונים', 'סמארטפון'));
+
+// רגרסיה: "אבי" יושב בתוך "שואבי", ובעבר זה יצר התאמה שגויה.
+check('רגרסיה: "אביב" אינו תואם "שואבי"', !E.wordsMatch('אביב', 'שואבי'));
+check('רגרסיה: "אביב" אינו תואם "אבק"', !E.wordsMatch('אביב', 'אבק'));
+check('מילים שונות לא מתאימות: "ביטוח" מול "ביטול"', !E.wordsMatch('ביטוח', 'ביטול'));
+
+/* --- דירוג בחיפוש חופשי --- */
+
+function topOf(query) {
+  const r = E.search(db, query, 0, TODAY);
+  return r.length ? r[0].benefit : null;
+}
+
+check('שאלה על מזוודות מחזירה את רשומת הכבודה',
+  (topOf('כמה מזוודות מותר לי בטיסה') || {}).id === 'elal-baggage',
+  (topOf('כמה מזוודות מותר לי בטיסה') || {}).title);
+
+check('שאלה על חניה מחזירה את הטבת החניה',
+  (topOf('חניה בסופש בתל אביב') || {}).id === 'mafteah-parking',
+  (topOf('חניה בסופש בתל אביב') || {}).title);
+
+check('רגרסיה: חיפוש "תל אביב" לא מחזיר את רשומת שואבי האבק',
+  !E.search(db, 'חניה בתל אביב', 0, TODAY).some((r) => r.benefit.id === 'htzone-home-office'));
+
+check('שאלה על 1+1 בקולנוע מחזירה את הטבת הקולנוע',
+  (topOf('1+1 לקולנוע') || {}).id === 'htzcard-cinema',
+  (topOf('1+1 לקולנוע') || {}).title);
+
+check('שאלה על מטבח מחזירה את הארנק הירוק',
+  (E.search(db, 'מטבח חדש', 20000, TODAY)[0] || {}).benefit.id === 'green-wallet-main');
+
+/* --- מינימום קנייה --- */
+
+const greenWallet = db.benefits.find((b) => b.id === 'green-wallet-main');
+const below = E.calcSaving(greenWallet, 2000, S);
+check('מתחת לסף מוצג ההפרש הנדרש',
+  below.computable === false && below.label.includes('1,000'), below.label);
+check('מעל הסף ההנחה מחושבת',
+  E.calcSaving(greenWallet, 3500, S).amount === 350);
+
 /* --- דירוג --- */
 
 const ranked = E.rankByCategory(db, 'electronics', 5000, TODAY);

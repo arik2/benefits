@@ -5,12 +5,16 @@
 
 /* ---------- עזרי טקסט ---------- */
 
+// אותיות סופיות מומרות לצורתן הרגילה, אחרת "מלון" ו"מלונות" לא נראים קרובים.
+const FINAL_LETTERS = { 'ם': 'מ', 'ן': 'נ', 'ץ': 'צ', 'ף': 'פ', 'ך': 'כ' };
+
 // מנקה ניקוד, גרשיים וסימני פיסוק כדי ש"חו\"ל" ו"חול" ייחשבו זהים.
 function normalize(text) {
   return String(text || '')
     .replace(/[֑-ׇ]/g, '')      // ניקוד וטעמים
     .replace(/["'`׳״]/g, '')
     .replace(/[.,!?;:()\[\]{}\/\\|-]/g, ' ')
+    .replace(/[םןץףך]/g, (c) => FINAL_LETTERS[c])
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -29,11 +33,69 @@ function tokenize(text) {
     .filter((w) => w.length > 1 && !STOPWORDS.has(w));
 }
 
-// התאמה חלקית: "מלונות" צריך להתאים ל"מלון".
-function tokenMatches(token, target) {
-  if (target.includes(token)) return true;
-  if (token.length >= 4 && token.slice(0, -1) && target.includes(token.slice(0, -1))) return true;
+/*
+ * גזירת שורש בסיסית לעברית.
+ *
+ * ההשוואה נעשית בין מילים שלמות ולא כתת-מחרוזת בתוך טקסט רציף.
+ * זה קריטי: חיפוש "אביב" התאים בעבר ל"שואבי אבק", כי "אבי" יושב בתוך "שואבי".
+ *
+ * לכל מילה נבנית קבוצת צורות אפשריות — המקור, בלי אות שימוש בהתחלה,
+ * בלי סיומת נטייה, ובלי שתיהן. שתי מילים נחשבות תואמות אם יש צורה משותפת.
+ * גזירה חד-משמעית בעברית היא בעיה קשה, ולכן נשמרות כל האפשרויות
+ * במקום לבחור אחת ולטעות.
+ */
+const PREFIX_LETTERS = ['ומה', 'שה', 'כש', 'מה', 'לה', 'בה', 'ו', 'ב', 'ל', 'מ', 'ה', 'ש', 'כ'];
+const SUFFIXES = ['יות', 'ות', 'ים', 'ין', 'ה', 'ת', 'י'];
+
+function wordForms(rawWord) {
+  // קיפול אותיות סופיות נעשה כאן ולא רק ב-normalize, כדי שהפונקציה תהיה
+  // נכונה גם כשקוראים לה ישירות עם מילה גולמית. הפעולה אידמפוטנטית.
+  const word = String(rawWord || '').replace(/[םןץףך]/g, (c) => FINAL_LETTERS[c]);
+  const forms = new Set([word]);
+  const bases = [word];
+
+  for (const p of PREFIX_LETTERS) {
+    if (word.startsWith(p) && word.length - p.length >= 3) {
+      const stripped = word.slice(p.length);
+      forms.add(stripped);
+      bases.push(stripped);
+      break; // אות שימוש אחת בלבד, אחרת מפרקים מילים אמיתיות
+    }
+  }
+
+  for (const base of bases) {
+    for (const s of SUFFIXES) {
+      if (base.endsWith(s) && base.length - s.length >= 3) {
+        forms.add(base.slice(0, -s.length));
+        break;
+      }
+    }
+  }
+
+  return forms;
+}
+
+function wordsOf(text) {
+  return String(text || '').split(' ').filter(Boolean);
+}
+
+// שתי מילים תואמות אם יש להן צורה משותפת, או שאחת היא תחילית של השנייה.
+function wordsMatch(rawA, rawB) {
+  if (rawA === rawB) return true;
+  const formsA = wordForms(rawA);
+  const formsB = wordForms(rawB);
+  for (const fa of formsA) {
+    if (formsB.has(fa)) return true;
+    for (const fb of formsB) {
+      const min = Math.min(fa.length, fb.length);
+      if (min >= 4 && (fa.startsWith(fb) || fb.startsWith(fa))) return true;
+    }
+  }
   return false;
+}
+
+function tokenMatches(token, targetWords) {
+  return targetWords.some((w) => wordsMatch(token, w));
 }
 
 /* ---------- חישוב חיסכון ---------- */
@@ -47,8 +109,13 @@ function calcSaving(benefit, amount, settings) {
   const cap = benefit.capPerTx == null ? Infinity : benefit.capPerTx;
   const min = benefit.minSpend || 0;
 
+  // כשחסר מעט כדי לעבור את הסף, ההפרש עצמו הוא המידע השימושי.
   if (amount < min) {
-    return { amount: 0, label: `דורש מינימום ${formatIls(min)}`, computable: false };
+    const gap = min - amount;
+    const label = amount > 0
+      ? `חסרים ${formatIls(gap)} לסף של ${formatIls(min)}`
+      : `דורש מינימום ${formatIls(min)}`;
+    return { amount: 0, label, computable: false };
   }
 
   switch (benefit.kind) {
@@ -157,19 +224,30 @@ function search(db, query, amount, today) {
 
     // כל שדה מקבל משקל לפי כמה הוא מעיד על רלוונטיות אמיתית.
     const fields = [
-      { weight: 6, text: normalize(cats.map((c) => c.label + ' ' + (c.synonyms || []).join(' ')).join(' ')) },
-      { weight: 5, text: normalize(b.title) },
-      { weight: 4, text: normalize((b.tags || []).join(' ')) },
-      { weight: 3, text: normalize(provider.name) },
-      { weight: 1, text: normalize(b.conditions) },
+      { weight: 6, words: wordsOf(normalize(cats.map((c) => c.label + ' ' + (c.synonyms || []).join(' ')).join(' '))) },
+      { weight: 5, words: wordsOf(normalize(b.title)) },
+      { weight: 4, words: wordsOf(normalize((b.tags || []).join(' '))) },
+      { weight: 3, words: wordsOf(normalize(provider.name)) },
+      { weight: 1, words: wordsOf(normalize(b.conditions)) },
     ];
 
     let score = 0;
     let hits = 0;
     for (const token of tokens) {
       let best = 0;
-      for (const f of fields) if (tokenMatches(token, f.text)) best = Math.max(best, f.weight);
-      if (best) { score += best; hits += 1; }
+      let matchedFields = 0;
+      for (const f of fields) {
+        if (tokenMatches(token, f.words)) {
+          best = Math.max(best, f.weight);
+          matchedFields += 1;
+        }
+      }
+      if (best) {
+        // מילה שמופיעה גם בקטגוריה וגם בכותרת או בתגיות מעידה חזק יותר
+        // מאשר מילה שנתפסה רק דרך הקטגוריה הרחבה, שמשותפת להטבות רבות.
+        score += best + (matchedFields - 1);
+        hits += 1;
+      }
     }
 
     // בונוס לכיסוי: התאמה של כל מילות השאלה עדיפה על התאמה חזקה למילה אחת.
@@ -213,5 +291,6 @@ function formatIls(n) {
 /* ייצוא גם ל-<script> רגיל וגם לסביבת בדיקות (Node) */
 const Engine = {
   normalize, tokenize, calcSaving, expiryState, rankByCategory, search, formatIls, pointValueFor, describeRate,
+  wordsMatch, wordForms,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = Engine;
