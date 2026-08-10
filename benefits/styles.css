@@ -260,6 +260,70 @@ input:focus, select:focus, textarea:focus {
 .badge.rank { background: var(--good); color: #fff; font-weight: 700; }
 
 .result-body { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+
+.result.is-example { opacity: .82; border-inline-start-style: dashed; }
+.badge.example { background: var(--bg); color: var(--ink-soft); border-color: var(--line); }
+
+.saving.bound { background: var(--warn-bg); color: var(--warn); }
+
+/* בתי עסק */
+.merchants { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+.merchant {
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--ink-soft);
+}
+
+/* שאלת ההבהרה */
+.choice {
+  margin-top: 11px;
+  padding: 11px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+}
+.choice.chosen { border-style: solid; }
+.choice-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.choice-chip { text-align: start; }
+.chip-val { font-weight: 700; color: var(--good); margin-inline-start: 4px; }
+
+.note {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 13px;
+}
+
+/* עורך האפשרויות */
+.variants {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 14px 0 0;
+}
+.variants legend { font-size: 14px; font-weight: 600; color: var(--ink-soft); padding: 0 6px; }
+
+.variant-row {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 9px;
+  background: var(--bg);
+}
+.variant-row input, .variant-row select { margin-bottom: 7px; }
+.variant-head { display: flex; gap: 8px; align-items: center; }
+.variant-head .v-label { flex: 1; }
+
+.days { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.days-label { font-size: 12px; color: var(--ink-soft); width: 100%; }
+.day { display: flex; align-items: center; gap: 3px; margin: 0; font-size: 12px; font-weight: 400; }
+.day input { width: auto; }
+
+.hint { font-size: 12px; color: var(--ink-soft); margin: 4px 0 0; }
 .result-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .link-btn {
   background: none;

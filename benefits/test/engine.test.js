@@ -11,6 +11,9 @@ const db = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'benefi
 const TODAY = new Date('2026-08-10');
 const S = db.settings;
 
+// כל תחומי ההטבה של רשומה: ההטבה עצמה, או ה-variants שלה
+const scopesAll = (b) => E.scopesOf(b);
+
 let failed = 0;
 function check(name, condition, detail) {
   const mark = condition ? 'PASS' : 'FAIL';
@@ -84,6 +87,15 @@ check('רגרסיה: "אביב" אינו תואם "שואבי"', !E.wordsMatch('
 check('רגרסיה: "אביב" אינו תואם "אבק"', !E.wordsMatch('אביב', 'אבק'));
 check('מילים שונות לא מתאימות: "ביטוח" מול "ביטול"', !E.wordsMatch('ביטוח', 'ביטול'));
 
+check('חיתוך רלוונטיות מסנן התאמות חלשות', (() => {
+  const rows = E.search(db, 'הנחות על מלון בארץ', 2000, TODAY);
+  const top = rows[0].score;
+  return rows.length < db.benefits.length / 2 && rows.every((r, i) => i === 0 || r.score >= top * 0.2);
+})(), E.search(db, 'הנחות על מלון בארץ', 2000, TODAY).length + ' תוצאות מתוך ' + db.benefits.length);
+
+check('שאלה על מלון לא מחזירה את הטבת החניה',
+  !E.search(db, 'הנחות על מלון בארץ', 2000, TODAY).some((r) => r.benefit.id === 'mafteah-parking'));
+
 /* --- דירוג בחיפוש חופשי --- */
 
 function topOf(query) {
@@ -156,7 +168,88 @@ const kinds = new Set(['percent', 'cashback', 'fixed', 'bogo', 'points', 'info']
 check('כל סוגי ההטבה תקינים', db.benefits.every((b) => kinds.has(b.kind)));
 
 check('לכל הטבה יש כותרת וסטטוס',
-  db.benefits.every((b) => b.title && (b.status === 'verified' || b.status === 'unverified')));
+  db.benefits.every((b) => b.title && ['verified', 'unverified', 'example'].includes(b.status)),
+  db.benefits.filter((b) => !['verified', 'unverified', 'example'].includes(b.status)).map((b) => b.id).join(', '));
+
+check('לכל variant יש תווית',
+  db.benefits.every((b) => (b.variants || []).every((v) => v.label && v.label.trim())));
+
+check('ימי תוקף הם 0 עד 6 בלבד',
+  db.benefits.every((b) => scopesAll(b).every((s) =>
+    !s.validDays || s.validDays.every((d) => Number.isInteger(d) && d >= 0 && d <= 6))));
+
+/* --- חיפוש לפי בית עסק --- */
+
+const foxRows = E.searchByMerchant(db, 'פוקס', 400, TODAY);
+check('חיפוש "פוקס" מחזיר הטבות', foxRows.length > 0, foxRows.length + ' תוצאות');
+
+check('כל תוצאה בחיפוש בית עסק אכן רשומה על אותו בית עסק',
+  foxRows.every((r) => (r.benefit.merchants || []).some((m) => /פוקס/.test(m))));
+
+check('חיפוש בית עסק שלא קיים מחזיר ריק',
+  E.searchByMerchant(db, 'חנות שלא קיימת בכלל', 100, TODAY).length === 0);
+
+check('רשימת בתי העסק אינה ריקה ואין בה כפילויות', (() => {
+  const list = E.allMerchants(db);
+  return list.length > 10 && new Set(list).size === list.length;
+})(), E.allMerchants(db).length + ' בתי עסק');
+
+check('שם בית עסק בשאלה חופשית מדורג ראשון',
+  (E.search(db, 'קונה בפוקס', 400, TODAY)[0] || {}).benefit.merchants.some((m) => /פוקס/.test(m)));
+
+/* --- הטבות מרובות אפשרויות --- */
+
+const dream = db.benefits.find((b) => b.id === 'dreamcard-main');
+const dreamEval = E.evaluate(dream, { amount: 400, date: TODAY, settings: S });
+
+check('הטבה עם כמה אפשרויות מבקשת הבהרה', dreamEval.needsChoice === true);
+check('כל האפשרויות מוצגות לבחירה', dreamEval.choices.length === 4, dreamEval.choices.length + ' אפשרויות');
+check('לפני בחירה המספר מסומן כתקרה ולא כתשובה', dreamEval.saving.isUpperBound === true);
+check('התקרה שווה לאפשרות הטובה ביותר (30% מ-400)', dreamEval.saving.amount === 120);
+check('התווית מתארת טווח ולא מספר יחיד', dreamEval.saving.label.includes('תלוי'), dreamEval.saving.label);
+
+const picked = E.evaluate(dream, { amount: 400, date: TODAY, settings: S, variantId: 'regular' });
+check('אחרי בחירה מתקבלת תשובה ודאית',
+  picked.needsChoice === false && picked.saving.isUpperBound !== true);
+check('הבחירה משנה את החישוב (10% מ-400)', picked.saving.amount === 40);
+check('הבחירה מדווחת חזרה', (picked.chosen || {}).id === 'regular', (picked.chosen || {}).label);
+
+check('בחירת יום הולדת נותנת 30%',
+  E.evaluate(dream, { amount: 400, date: TODAY, settings: S, variantId: 'birthday' }).saving.amount === 120);
+
+check('מזהה variant לא קיים לא מפיל ומטופל כאילו לא נבחר',
+  E.evaluate(dream, { amount: 400, date: TODAY, settings: S, variantId: 'לא-קיים' }).needsChoice === true);
+
+/* --- תלות בתאריך --- */
+
+const hotel = db.benefits.find((b) => b.id === 'example-hotel');
+const on = (iso) => E.evaluate(hotel, { amount: 2000, date: new Date(iso + 'T12:00:00'), settings: S });
+
+check('יום שני מפעיל את מסלול אמצע השבוע (20%)',
+  on('2026-08-10').saving.amount === 400, on('2026-08-10').saving.label);
+
+check('יום שישי מפעיל את מסלול סוף השבוע (8%)',
+  on('2026-08-14').saving.amount === 160, on('2026-08-14').saving.label);
+
+check('כשרק אפשרות אחת תקפה בתאריך, אין שאלה והתשובה ודאית',
+  on('2026-08-14').needsChoice === false && on('2026-08-14').saving.isUpperBound !== true);
+
+check('התאריך בוחר את האפשרות אוטומטית',
+  (on('2026-08-14').chosen || {}).id === 'weekend', (on('2026-08-14').chosen || {}).label);
+
+const blackedOut = on('2026-09-20');
+check('תאריך בתקופת חסימה מסומן כלא תקף', blackedOut.active === false);
+check('סיבת החסימה מוסברת למשתמש',
+  /חגי תשרי/.test(blackedOut.inactiveReason || ''), blackedOut.inactiveReason);
+
+check('הטבה בלי מגבלת ימים תקפה בכל יום', (() => {
+  const simple = db.benefits.find((b) => b.id === 'mafteah-food');
+  return ['2026-08-10', '2026-08-14', '2026-12-01']
+    .every((d) => E.evaluate(simple, { amount: 500, date: new Date(d + 'T12:00:00'), settings: S }).active);
+})());
+
+check('activeOn מזהה תאריך שטרם החל',
+  E.activeOn({ validFrom: '2027-01-01' }, TODAY).active === false);
 
 check('כל קטגוריה מיוצגת בלפחות הטבה אחת', (() => {
   const used = new Set(db.benefits.flatMap((b) => b.categories || []));

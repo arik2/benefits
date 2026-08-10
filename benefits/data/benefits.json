@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "updatedAt": "2026-08-10",
   "note": "נתוני התחלה שנאספו ממקורות פומביים משניים בלבד (סיקורים, מדריכים, פורומים). אתרי המועדונים עצמם לא היו נגישים בזמן האיסוף. כל רשומה מסומנת 'לאימות' עד שתאומת מול החשבון האישי.",
   "settings": {
@@ -9,49 +9,457 @@
     }
   },
   "categories": [
-    { "id": "supermarket", "label": "סופרמרקט ומזון", "icon": "🛒", "synonyms": ["סופר", "מכולת", "קניות", "אוכל", "מזון", "רמי לוי", "שופרסל", "יינות ביתן", "ויקטורי", "אושר עד", "טיב טעם", "רשת מזון"] },
-    { "id": "fuel", "label": "דלק", "icon": "⛽", "synonyms": ["תדלוק", "בנזין", "סולר", "פז", "דור אלון", "סונול", "דלק", "תחנת דלק"] },
-    { "id": "cinema", "label": "קולנוע", "icon": "🎬", "synonyms": ["סרט", "סרטים", "סינמה סיטי", "יס פלנט", "רב חן", "בית קולנוע"] },
-    { "id": "theater", "label": "הצגות ומופעים", "icon": "🎭", "synonyms": ["הצגה", "מופע", "תיאטרון", "הופעה", "כרטיסים", "קונצרט", "מינוי לתיאטרון"] },
-    { "id": "dining", "label": "מסעדות ובתי קפה", "icon": "🍽️", "synonyms": ["מסעדה", "אוכל בחוץ", "בית קפה", "קפה", "משלוח", "ארוחה", "מסעדת שף", "קולינריה"] },
-    { "id": "hotels", "label": "מלונות ונופש בארץ", "icon": "🏨", "synonyms": ["מלון", "צימר", "נופש", "חופשה", "אילת", "ים המלח", "לינה", "סופש", "נופשון", "ספא", "אירוח"] },
-    { "id": "flights", "label": "טיסות", "icon": "✈️", "synonyms": ["טיסה", "כרטיס טיסה", "אל על", "נסיעה לחול", "כרטיסי טיסה", "ארקיע", "לאונג", "טרקלין", "כבודה", "מזוודה"] },
-    { "id": "travel_abroad", "label": "הוצאות בחו\"ל", "icon": "🌍", "synonyms": ["חול", "מטבע חוץ", "המרת מטבע", "עמלת המרה", "דולר", "יורו", "בחוץ לארץ", "מטח", "משיכת מזומן", "טיול מאורגן"] },
-    { "id": "electronics", "label": "חשמל ואלקטרוניקה", "icon": "🔌", "synonyms": ["מקרר", "טלוויזיה", "מכונת כביסה", "מזגן", "מחשב", "לפטופ", "אייפון", "סמארטפון", "טלפון", "אוזניות", "מסך", "שואב אבק"] },
-    { "id": "fashion", "label": "אופנה והנעלה", "icon": "👕", "synonyms": ["בגדים", "נעליים", "ביגוד", "קסטרו", "זארה", "פוקס", "רנואר", "אופנה", "לייף סטייל", "תכשיטים"] },
-    { "id": "furniture", "label": "ריהוט ולבית", "icon": "🛋️", "synonyms": ["רהיטים", "ספה", "מיטה", "איקאה", "כלי בית", "מטבח", "ביתילי", "הולנדיה", "כיסא", "קרמיקה", "עיצוב הבית"] },
-    { "id": "attractions", "label": "אטרקציות ופנאי", "icon": "🎡", "synonyms": ["פארק", "אטרקציה", "לונה פארק", "ספארי", "מוזיאון", "בילוי", "כיף", "באולינג", "בריכה", "אקסטרים"] },
-    { "id": "sport", "label": "ספורט וחדר כושר", "icon": "🏋️", "synonyms": ["חדר כושר", "מנוי כושר", "ריצה", "אופניים", "הולמס פלייס", "גו אקטיב", "חיים בריאים"] },
-    { "id": "telecom", "label": "תקשורת וסלולר", "icon": "📱", "synonyms": ["סלולר", "אינטרנט", "חבילת גלישה", "טלוויזיה בכבלים", "פרטנר", "סלקום", "הוט", "יס"] },
-    { "id": "optics", "label": "אופטיקה", "icon": "👓", "synonyms": ["משקפיים", "עדשות מגע", "משקפי שמש", "אופטיקה", "הלפרין"] },
-    { "id": "pharmacy", "label": "פארם וטיפוח", "icon": "💊", "synonyms": ["סופר פארם", "בי פארם", "תרופות", "טיפוח", "קוסמטיקה", "בריאות"] },
-    { "id": "kids", "label": "ילדים ותינוקות", "icon": "🧸", "synonyms": ["צעצועים", "תינוק", "עגלה", "חיתולים", "ילדים", "שילב", "משחקים", "יצירה"] },
-    { "id": "parking", "label": "חניה", "icon": "🅿️", "synonyms": ["חניון", "חניה", "כחול לבן", "פנגו", "סלופארק"] },
-    { "id": "banking", "label": "בנקאות ועמלות", "icon": "🏦", "synonyms": ["עמלה", "עמלות", "דמי כרטיס", "ניהול חשבון", "ריבית", "עובר ושב", "משכנתא", "ניירות ערך", "בורסה", "השקעות"] },
-    { "id": "education", "label": "לימודים והעשרה", "icon": "📚", "synonyms": ["קורס", "לימודים", "חוג", "ספרים", "סטימצקי", "צומת ספרים", "העשרה"] },
-    { "id": "insurance", "label": "ביטוח", "icon": "🛡️", "synonyms": ["ביטוח נסיעות", "ביטוח רכב", "ביטוח בריאות", "פוליסה", "הראל"] },
-    { "id": "auto", "label": "רכב", "icon": "🚗", "synonyms": ["רכב", "מכונית", "צמיגים", "מוסך", "טיפול", "מתגלגלים"] }
+    {
+      "id": "supermarket",
+      "label": "סופרמרקט ומזון",
+      "icon": "🛒",
+      "synonyms": [
+        "סופר",
+        "מכולת",
+        "קניות",
+        "אוכל",
+        "מזון",
+        "רמי לוי",
+        "שופרסל",
+        "יינות ביתן",
+        "ויקטורי",
+        "אושר עד",
+        "טיב טעם",
+        "רשת מזון"
+      ]
+    },
+    {
+      "id": "fuel",
+      "label": "דלק",
+      "icon": "⛽",
+      "synonyms": [
+        "תדלוק",
+        "בנזין",
+        "סולר",
+        "פז",
+        "דור אלון",
+        "סונול",
+        "דלק",
+        "תחנת דלק"
+      ]
+    },
+    {
+      "id": "cinema",
+      "label": "קולנוע",
+      "icon": "🎬",
+      "synonyms": [
+        "סרט",
+        "סרטים",
+        "סינמה סיטי",
+        "יס פלנט",
+        "רב חן",
+        "בית קולנוע"
+      ]
+    },
+    {
+      "id": "theater",
+      "label": "הצגות ומופעים",
+      "icon": "🎭",
+      "synonyms": [
+        "הצגה",
+        "מופע",
+        "תיאטרון",
+        "הופעה",
+        "כרטיסים",
+        "קונצרט",
+        "מינוי לתיאטרון"
+      ]
+    },
+    {
+      "id": "dining",
+      "label": "מסעדות ובתי קפה",
+      "icon": "🍽️",
+      "synonyms": [
+        "מסעדה",
+        "אוכל בחוץ",
+        "בית קפה",
+        "קפה",
+        "משלוח",
+        "ארוחה",
+        "מסעדת שף",
+        "קולינריה"
+      ]
+    },
+    {
+      "id": "hotels",
+      "label": "מלונות ונופש בארץ",
+      "icon": "🏨",
+      "synonyms": [
+        "מלון",
+        "צימר",
+        "נופש",
+        "חופשה",
+        "אילת",
+        "ים המלח",
+        "לינה",
+        "סופש",
+        "נופשון",
+        "ספא",
+        "אירוח"
+      ]
+    },
+    {
+      "id": "flights",
+      "label": "טיסות",
+      "icon": "✈️",
+      "synonyms": [
+        "טיסה",
+        "כרטיס טיסה",
+        "אל על",
+        "נסיעה לחול",
+        "כרטיסי טיסה",
+        "ארקיע",
+        "לאונג",
+        "טרקלין",
+        "כבודה",
+        "מזוודה"
+      ]
+    },
+    {
+      "id": "travel_abroad",
+      "label": "הוצאות בחו\"ל",
+      "icon": "🌍",
+      "synonyms": [
+        "חול",
+        "מטבע חוץ",
+        "המרת מטבע",
+        "עמלת המרה",
+        "דולר",
+        "יורו",
+        "בחוץ לארץ",
+        "מטח",
+        "משיכת מזומן",
+        "טיול מאורגן"
+      ]
+    },
+    {
+      "id": "electronics",
+      "label": "חשמל ואלקטרוניקה",
+      "icon": "🔌",
+      "synonyms": [
+        "מקרר",
+        "טלוויזיה",
+        "מכונת כביסה",
+        "מזגן",
+        "מחשב",
+        "לפטופ",
+        "אייפון",
+        "סמארטפון",
+        "טלפון",
+        "אוזניות",
+        "מסך",
+        "שואב אבק"
+      ]
+    },
+    {
+      "id": "fashion",
+      "label": "אופנה והנעלה",
+      "icon": "👕",
+      "synonyms": [
+        "בגדים",
+        "נעליים",
+        "ביגוד",
+        "קסטרו",
+        "זארה",
+        "פוקס",
+        "רנואר",
+        "אופנה",
+        "לייף סטייל",
+        "תכשיטים"
+      ]
+    },
+    {
+      "id": "furniture",
+      "label": "ריהוט ולבית",
+      "icon": "🛋️",
+      "synonyms": [
+        "רהיטים",
+        "ספה",
+        "מיטה",
+        "איקאה",
+        "כלי בית",
+        "מטבח",
+        "ביתילי",
+        "הולנדיה",
+        "כיסא",
+        "קרמיקה",
+        "עיצוב הבית"
+      ]
+    },
+    {
+      "id": "attractions",
+      "label": "אטרקציות ופנאי",
+      "icon": "🎡",
+      "synonyms": [
+        "פארק",
+        "אטרקציה",
+        "לונה פארק",
+        "ספארי",
+        "מוזיאון",
+        "בילוי",
+        "כיף",
+        "באולינג",
+        "בריכה",
+        "אקסטרים"
+      ]
+    },
+    {
+      "id": "sport",
+      "label": "ספורט וחדר כושר",
+      "icon": "🏋️",
+      "synonyms": [
+        "חדר כושר",
+        "מנוי כושר",
+        "ריצה",
+        "אופניים",
+        "הולמס פלייס",
+        "גו אקטיב",
+        "חיים בריאים"
+      ]
+    },
+    {
+      "id": "telecom",
+      "label": "תקשורת וסלולר",
+      "icon": "📱",
+      "synonyms": [
+        "סלולר",
+        "אינטרנט",
+        "חבילת גלישה",
+        "טלוויזיה בכבלים",
+        "פרטנר",
+        "סלקום",
+        "הוט",
+        "יס"
+      ]
+    },
+    {
+      "id": "optics",
+      "label": "אופטיקה",
+      "icon": "👓",
+      "synonyms": [
+        "משקפיים",
+        "עדשות מגע",
+        "משקפי שמש",
+        "אופטיקה",
+        "הלפרין"
+      ]
+    },
+    {
+      "id": "pharmacy",
+      "label": "פארם וטיפוח",
+      "icon": "💊",
+      "synonyms": [
+        "סופר פארם",
+        "בי פארם",
+        "תרופות",
+        "טיפוח",
+        "קוסמטיקה",
+        "בריאות"
+      ]
+    },
+    {
+      "id": "kids",
+      "label": "ילדים ותינוקות",
+      "icon": "🧸",
+      "synonyms": [
+        "צעצועים",
+        "תינוק",
+        "עגלה",
+        "חיתולים",
+        "ילדים",
+        "שילב",
+        "משחקים",
+        "יצירה"
+      ]
+    },
+    {
+      "id": "parking",
+      "label": "חניה",
+      "icon": "🅿️",
+      "synonyms": [
+        "חניון",
+        "חניה",
+        "כחול לבן",
+        "פנגו",
+        "סלופארק"
+      ]
+    },
+    {
+      "id": "banking",
+      "label": "בנקאות ועמלות",
+      "icon": "🏦",
+      "synonyms": [
+        "עמלה",
+        "עמלות",
+        "דמי כרטיס",
+        "ניהול חשבון",
+        "ריבית",
+        "עובר ושב",
+        "משכנתא",
+        "ניירות ערך",
+        "בורסה",
+        "השקעות"
+      ]
+    },
+    {
+      "id": "education",
+      "label": "לימודים והעשרה",
+      "icon": "📚",
+      "synonyms": [
+        "קורס",
+        "לימודים",
+        "חוג",
+        "ספרים",
+        "סטימצקי",
+        "צומת ספרים",
+        "העשרה"
+      ]
+    },
+    {
+      "id": "insurance",
+      "label": "ביטוח",
+      "icon": "🛡️",
+      "synonyms": [
+        "ביטוח נסיעות",
+        "ביטוח רכב",
+        "ביטוח בריאות",
+        "פוליסה",
+        "הראל"
+      ]
+    },
+    {
+      "id": "auto",
+      "label": "רכב",
+      "icon": "🚗",
+      "synonyms": [
+        "רכב",
+        "מכונית",
+        "צמיגים",
+        "מוסך",
+        "טיפול",
+        "מתגלגלים"
+      ]
+    }
   ],
   "providers": [
-    { "id": "behatzdaa", "name": "בהצדעה", "kind": "club", "color": "#4b6b3c", "url": "https://www.dts.co.il/", "note": "מועדון למשתחררים בכבוד משירות סדיר ולמשרתי מילואים פעילים. החברות ללא תשלום. ההטבות חלות גם על בני המשפחה. כרטיס המועדון מונפק על ידי מקס." },
-    { "id": "pais", "name": "מפעל הפיס", "kind": "club", "color": "#c2185b", "url": "https://paisplus.co.il/", "note": "מועדון בתשלום (פיס פלוס). מודל דרגות לפי ותק וכמות כרטיסי מנוי: כסף, זהב, זהב פלוס ופלטינום." },
-    { "id": "htzone", "name": "הייטק זון", "kind": "club", "color": "#1565c0", "url": "https://www.htzone.co.il/", "note": "מועדון הצרכנות של קהילת ההייטק. מעל 370,000 חברים מיותר מ-2,500 חברות. אלפי מבצעים מתעדכנים באתר ובאפליקציה." },
-    { "id": "elal_matmid", "name": "אל על - הנוסע המתמיד", "kind": "club", "color": "#0d47a1", "url": "https://www.elal.com/", "note": "תוכנית נאמנות עם חמישה מעמדות: רגיל, כסופה, זהב, פלטינה וטופ פלטינה. הצבירה נמדדת ביהלומים." },
-    { "id": "cal", "name": "כאל", "kind": "card", "color": "#00897b", "url": "https://www.cal-online.co.il/benefits/", "note": "חברת אשראי. הטבות ושוברים דיגיטליים מתחלפים באפליקציה." },
-    { "id": "max", "name": "מקס (MAX)", "kind": "card", "color": "#6a1b9a", "url": "https://www.max.co.il/benefits/lobby", "note": "חברת אשראי. מפעילה את 'הטבות פלוס' - הנחות במעמד החיוב באלפי בתי עסק." },
-    { "id": "mafteah_discount", "name": "מפתח דיסקונט", "kind": "card", "color": "#00695c", "url": "https://www.mafteach.co.il/", "note": "מועדון צרכנות לבעלי כרטיס האשראי של בנק דיסקונט. ההנחות נצברות לחשבון חיסכון ייעודי במקום לרדת בקופה." },
-    { "id": "discount_green_wallet", "name": "הארנק הירוק (דיסקונט)", "kind": "bank", "color": "#2e7d32", "url": "https://www.discountbank.co.il/private/communication-channels/green_wallet-home_design/", "note": "מוצר נפרד ממפתח דיסקונט, ולא מחליף אותו. הנחה מיידית על רכישות גדולות, מופעל דרך אפליקציית הבנק." },
-    { "id": "htzone_card", "name": "כרטיס אשראי הייטקזון", "kind": "card", "color": "#1976d2", "url": "https://www.htzone.co.il/", "note": "כרטיס בהנפקת כאל לחברי מועדון הייטק זון." },
-    { "id": "flycard", "name": "פליי קארד (Fly Card)", "kind": "card", "color": "#283593", "url": "https://www.isracard.co.il/flycard/private", "note": "כרטיס צובר נקודות ויהלומים למועדון הנוסע המתמיד." },
-    { "id": "discount_bank", "name": "בנק דיסקונט", "kind": "bank", "color": "#00838f", "url": "https://www.discountbank.co.il/", "note": "חשבון בנק. רלוונטי לעמלות, מסלולים והטבות חשבון." },
-    { "id": "onezero", "name": "ONE ZERO", "kind": "bank", "color": "#212121", "url": "https://www.onezerobank.com/", "note": "בנק דיגיטלי. מסלולי מנוי חודשיים, פטור מעמלות והטבות מטבע חוץ." }
+    {
+      "id": "behatzdaa",
+      "name": "בהצדעה",
+      "kind": "club",
+      "color": "#4b6b3c",
+      "url": "https://www.dts.co.il/",
+      "note": "מועדון למשתחררים בכבוד משירות סדיר ולמשרתי מילואים פעילים. החברות ללא תשלום. ההטבות חלות גם על בני המשפחה. כרטיס המועדון מונפק על ידי מקס."
+    },
+    {
+      "id": "pais",
+      "name": "מפעל הפיס",
+      "kind": "club",
+      "color": "#c2185b",
+      "url": "https://paisplus.co.il/",
+      "note": "מועדון בתשלום (פיס פלוס). מודל דרגות לפי ותק וכמות כרטיסי מנוי: כסף, זהב, זהב פלוס ופלטינום."
+    },
+    {
+      "id": "htzone",
+      "name": "הייטק זון",
+      "kind": "club",
+      "color": "#1565c0",
+      "url": "https://www.htzone.co.il/",
+      "note": "מועדון הצרכנות של קהילת ההייטק. מעל 370,000 חברים מיותר מ-2,500 חברות. אלפי מבצעים מתעדכנים באתר ובאפליקציה."
+    },
+    {
+      "id": "elal_matmid",
+      "name": "אל על - הנוסע המתמיד",
+      "kind": "club",
+      "color": "#0d47a1",
+      "url": "https://www.elal.com/",
+      "note": "תוכנית נאמנות עם חמישה מעמדות: רגיל, כסופה, זהב, פלטינה וטופ פלטינה. הצבירה נמדדת ביהלומים."
+    },
+    {
+      "id": "cal",
+      "name": "כאל",
+      "kind": "card",
+      "color": "#00897b",
+      "url": "https://www.cal-online.co.il/benefits/",
+      "note": "חברת אשראי. הטבות ושוברים דיגיטליים מתחלפים באפליקציה."
+    },
+    {
+      "id": "max",
+      "name": "מקס (MAX)",
+      "kind": "card",
+      "color": "#6a1b9a",
+      "url": "https://www.max.co.il/benefits/lobby",
+      "note": "חברת אשראי. מפעילה את 'הטבות פלוס' - הנחות במעמד החיוב באלפי בתי עסק."
+    },
+    {
+      "id": "mafteah_discount",
+      "name": "מפתח דיסקונט",
+      "kind": "card",
+      "color": "#00695c",
+      "url": "https://www.mafteach.co.il/",
+      "note": "מועדון צרכנות לבעלי כרטיס האשראי של בנק דיסקונט. ההנחות נצברות לחשבון חיסכון ייעודי במקום לרדת בקופה."
+    },
+    {
+      "id": "discount_green_wallet",
+      "name": "הארנק הירוק (דיסקונט)",
+      "kind": "bank",
+      "color": "#2e7d32",
+      "url": "https://www.discountbank.co.il/private/communication-channels/green_wallet-home_design/",
+      "note": "מוצר נפרד ממפתח דיסקונט, ולא מחליף אותו. הנחה מיידית על רכישות גדולות, מופעל דרך אפליקציית הבנק."
+    },
+    {
+      "id": "htzone_card",
+      "name": "כרטיס אשראי הייטקזון",
+      "kind": "card",
+      "color": "#1976d2",
+      "url": "https://www.htzone.co.il/",
+      "note": "כרטיס בהנפקת כאל לחברי מועדון הייטק זון."
+    },
+    {
+      "id": "flycard",
+      "name": "פליי קארד (Fly Card)",
+      "kind": "card",
+      "color": "#283593",
+      "url": "https://www.isracard.co.il/flycard/private",
+      "note": "כרטיס צובר נקודות ויהלומים למועדון הנוסע המתמיד."
+    },
+    {
+      "id": "dreamcard",
+      "name": "דרים קארד (מועדון פוקס)",
+      "kind": "club",
+      "color": "#ad1457",
+      "url": "https://fox.co.il/pages/dream-card-%D7%94%D7%98%D7%91%D7%95%D7%AA-%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F",
+      "note": "מועדון הלקוחות של קבוצת פוקס. תקף ברשתות פוקס, פוקס הום, ללין, בילבונג, מנגו, יאנגה, טרמינל X, אמריקן איגל, דרים ספורט, פוט לוקר, קויק סילבר, בורד ריידרס, Aerie ו-The Children's Place."
+    },
+    {
+      "id": "discount_bank",
+      "name": "בנק דיסקונט",
+      "kind": "bank",
+      "color": "#00838f",
+      "url": "https://www.discountbank.co.il/",
+      "note": "חשבון בנק. רלוונטי לעמלות, מסלולים והטבות חשבון."
+    },
+    {
+      "id": "onezero",
+      "name": "ONE ZERO",
+      "kind": "bank",
+      "color": "#212121",
+      "url": "https://www.onezerobank.com/",
+      "note": "בנק דיגיטלי. מסלולי מנוי חודשיים, פטור מעמלות והטבות מטבע חוץ."
+    }
   ],
   "benefits": [
     {
       "id": "behatzdaa-membership",
       "provider": "behatzdaa",
       "title": "חברות במועדון וכרטיס - ללא עלות",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -62,13 +470,25 @@
       "source": "https://www.hachvana.mod.gov.il/Benefits/Pages/hazdaa.aspx",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חינם", "מילואים", "משוחררים", "משפחה", "דמי כרטיס"]
+      "tags": [
+        "חינם",
+        "מילואים",
+        "משוחררים",
+        "משפחה",
+        "דמי כרטיס"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-payback",
       "provider": "behatzdaa",
       "title": "עד 15% החזר כספי ברכישות אונליין (Pay Back)",
-      "categories": ["fashion", "electronics", "kids", "sport"],
+      "categories": [
+        "fashion",
+        "electronics",
+        "kids",
+        "sport"
+      ],
       "kind": "cashback",
       "value": 15,
       "capPerTx": null,
@@ -79,13 +499,23 @@
       "source": "https://www.max.co.il/cards/behatsdaa",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["החזר כספי", "אונליין", "קניות ברשת", "פיי בק"]
+      "tags": [
+        "החזר כספי",
+        "אונליין",
+        "קניות ברשת",
+        "פיי בק"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-bogo",
       "provider": "behatzdaa",
       "title": "פינוקים 1+1 לאטרקציות, מופעים, בתי קפה ומסעדות",
-      "categories": ["attractions", "theater", "dining"],
+      "categories": [
+        "attractions",
+        "theater",
+        "dining"
+      ],
       "kind": "bogo",
       "value": 0,
       "capPerTx": null,
@@ -96,13 +526,25 @@
       "source": "https://www.max.co.il/cards/behatsdaa",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["1+1", "פינוקים", "אטרקציות", "מסעדות"]
+      "tags": [
+        "1+1",
+        "פינוקים",
+        "אטרקציות",
+        "מסעדות"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-beplus",
       "provider": "behatzdaa",
       "title": "Be-Plus - הנחות במעמד החיוב",
-      "categories": ["supermarket", "dining", "fashion", "attractions", "sport"],
+      "categories": [
+        "supermarket",
+        "dining",
+        "fashion",
+        "attractions",
+        "sport"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -113,13 +555,21 @@
       "source": "https://be-plus.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מעמד החיוב", "אוטומטי", "בי פלוס"]
+      "tags": [
+        "מעמד החיוב",
+        "אוטומטי",
+        "בי פלוס"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-hotels",
       "provider": "behatzdaa",
       "title": "הנחות על נופש, מלונות, ספא וטיולים",
-      "categories": ["hotels", "attractions"],
+      "categories": [
+        "hotels",
+        "attractions"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -130,13 +580,22 @@
       "source": "https://www.dts.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["נופש", "מלון", "ספא", "טיולים"]
+      "tags": [
+        "נופש",
+        "מלון",
+        "ספא",
+        "טיולים"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-culture",
       "provider": "behatzdaa",
       "title": "הנחות לקולנוע, מופעים, הצגות ומינויים לתיאטרון",
-      "categories": ["cinema", "theater"],
+      "categories": [
+        "cinema",
+        "theater"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -147,13 +606,23 @@
       "source": "https://www.dts.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["קולנוע", "תיאטרון", "מינוי", "מופעים"]
+      "tags": [
+        "קולנוע",
+        "תיאטרון",
+        "מינוי",
+        "מופעים"
+      ],
+      "merchants": []
     },
     {
       "id": "behatzdaa-leisure",
       "provider": "behatzdaa",
       "title": "הנחות לבאולינג, בריכות שחייה ומוזיאונים",
-      "categories": ["attractions", "sport", "kids"],
+      "categories": [
+        "attractions",
+        "sport",
+        "kids"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -164,13 +633,21 @@
       "source": "https://www.dts.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["באולינג", "בריכה", "מוזיאון", "משפחה"]
+      "tags": [
+        "באולינג",
+        "בריכה",
+        "מוזיאון",
+        "משפחה"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-monthly-reset",
       "provider": "pais",
       "title": "⚠️ ההטבות מתאפסות בכל חודש ואינן נצברות",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -181,13 +658,21 @@
       "source": "https://www.pais.co.il/info/default.aspx?PageId=1178",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["דחוף", "מתאפס", "יתרה חודשית", "לנצל"]
+      "tags": [
+        "דחוף",
+        "מתאפס",
+        "יתרה חודשית",
+        "לנצל"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-tiers",
       "provider": "pais",
       "title": "מודל דרגות: כסף, זהב, זהב פלוס ופלטינום",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -198,13 +683,20 @@
       "source": "https://www.pais.co.il/info/default.aspx?PageId=1178",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["דרגות", "ותק", "זכאות"]
+      "tags": [
+        "דרגות",
+        "ותק",
+        "זכאות"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-cost",
       "provider": "pais",
       "title": "עלות המנוי - לבדוק שהוא מחזיר את עצמו",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -215,13 +707,20 @@
       "source": "https://www.poenta.co.il/article/paisplus-coupons-2/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["עלות", "דמי מנוי", "כדאיות"]
+      "tags": [
+        "עלות",
+        "דמי מנוי",
+        "כדאיות"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-dining",
       "provider": "pais",
       "title": "הנחות על ארוחות במסעדות",
-      "categories": ["dining"],
+      "categories": [
+        "dining"
+      ],
       "kind": "percent",
       "value": 15,
       "capPerTx": null,
@@ -232,13 +731,21 @@
       "source": "https://paisplus.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מסעדות", "ארוחה", "שובר"]
+      "tags": [
+        "מסעדות",
+        "ארוחה",
+        "שובר"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-vacation",
       "provider": "pais",
       "title": "נופשונים וטיולים בארץ",
-      "categories": ["hotels", "attractions"],
+      "categories": [
+        "hotels",
+        "attractions"
+      ],
       "kind": "percent",
       "value": 15,
       "capPerTx": null,
@@ -249,13 +756,21 @@
       "source": "https://paisplus.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["נופשון", "טיול", "בארץ"]
+      "tags": [
+        "נופשון",
+        "טיול",
+        "בארץ"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-family",
       "provider": "pais",
       "title": "אטרקציות, משחקים ויצירה לכל המשפחה",
-      "categories": ["attractions", "kids"],
+      "categories": [
+        "attractions",
+        "kids"
+      ],
       "kind": "percent",
       "value": 15,
       "capPerTx": null,
@@ -266,13 +781,22 @@
       "source": "https://paisplus.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["ילדים", "משפחה", "אטרקציות"]
+      "tags": [
+        "ילדים",
+        "משפחה",
+        "אטרקציות"
+      ],
+      "merchants": []
     },
     {
       "id": "pais-products",
       "provider": "pais",
       "title": "מוצרים עד הבית",
-      "categories": ["electronics", "furniture", "kids"],
+      "categories": [
+        "electronics",
+        "furniture",
+        "kids"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -283,13 +807,22 @@
       "source": "https://paisplus.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מוצרים", "משלוח", "עד הבית"]
+      "tags": [
+        "מוצרים",
+        "משלוח",
+        "עד הבית"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-retail",
       "provider": "htzone",
       "title": "עד 20% הנחה ברשתות אופנה, מזון ומסעדות",
-      "categories": ["fashion", "supermarket", "dining"],
+      "categories": [
+        "fashion",
+        "supermarket",
+        "dining"
+      ],
       "kind": "percent",
       "value": 20,
       "capPerTx": null,
@@ -300,13 +833,28 @@
       "source": "https://www.htzone.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["אופנה", "מזון", "מסעדות", "שוברים"]
+      "tags": [
+        "אופנה",
+        "מזון",
+        "מסעדות",
+        "שוברים"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-charge-benefits",
       "provider": "htzone",
       "title": "הטבות במעמד החיוב",
-      "categories": ["dining", "sport", "furniture", "attractions", "pharmacy", "fashion", "auto", "education"],
+      "categories": [
+        "dining",
+        "sport",
+        "furniture",
+        "attractions",
+        "pharmacy",
+        "fashion",
+        "auto",
+        "education"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -317,13 +865,21 @@
       "source": "https://www.htzone.co.il/sale/62",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מעמד החיוב", "אוטומטי", "מותאם אישית"]
+      "tags": [
+        "מעמד החיוב",
+        "אוטומטי",
+        "מותאם אישית"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-home-office",
       "provider": "htzone",
       "title": "ציוד לבית ולעבודה - כסאות ארגונומיים, מסכים, שואבי אבק",
-      "categories": ["furniture", "electronics"],
+      "categories": [
+        "furniture",
+        "electronics"
+      ],
       "kind": "percent",
       "value": 20,
       "capPerTx": null,
@@ -334,13 +890,22 @@
       "source": "https://editors.org.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["כיסא ארגונומי", "מסך", "שואב אבק", "עבודה מהבית"]
+      "tags": [
+        "כיסא ארגונומי",
+        "מסך",
+        "שואב אבק",
+        "עבודה מהבית"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-electronics",
       "provider": "htzone",
       "title": "הנחות על אלקטרוניקה, סמארטפונים וספורט",
-      "categories": ["electronics", "sport"],
+      "categories": [
+        "electronics",
+        "sport"
+      ],
       "kind": "percent",
       "value": 20,
       "capPerTx": null,
@@ -351,13 +916,24 @@
       "source": "https://www.reali.co.il/?p=11114",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חשמל", "אלקטרוניקה", "סמארטפון", "מותגים"]
+      "tags": [
+        "חשמל",
+        "אלקטרוניקה",
+        "סמארטפון",
+        "מותגים"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-travel",
       "provider": "htzone",
       "title": "חופשות בארץ ובחו\"ל, טיולים מאורגנים ומסעדות שף",
-      "categories": ["hotels", "travel_abroad", "flights", "dining"],
+      "categories": [
+        "hotels",
+        "travel_abroad",
+        "flights",
+        "dining"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -368,13 +944,21 @@
       "source": "https://www.htzone.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חופשה", "טיול מאורגן", "מסעדת שף"]
+      "tags": [
+        "חופשה",
+        "טיול מאורגן",
+        "מסעדת שף"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-attractions",
       "provider": "htzone",
       "title": "כרטיסים מוזלים לאתרי בילוי ואטרקציות",
-      "categories": ["attractions", "kids"],
+      "categories": [
+        "attractions",
+        "kids"
+      ],
       "kind": "percent",
       "value": 15,
       "capPerTx": null,
@@ -385,13 +969,20 @@
       "source": "https://www.htzone.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["אטרקציות", "בילוי", "מסובסד"]
+      "tags": [
+        "אטרקציות",
+        "בילוי",
+        "מסובסד"
+      ],
+      "merchants": []
     },
     {
       "id": "htzone-securities",
       "provider": "htzone",
       "title": "עמלת קנייה ומכירה של ניירות ערך 0.1%",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -402,13 +993,24 @@
       "source": "https://www.bankhapoalim.co.il/he/open-account/high-tech-zone",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["ניירות ערך", "בורסה", "עמלה", "הפועלים", "השוואה"]
+      "tags": [
+        "ניירות ערך",
+        "בורסה",
+        "עמלה",
+        "הפועלים",
+        "השוואה"
+      ],
+      "merchants": [
+        "בנק הפועלים"
+      ]
     },
     {
       "id": "htzone-mortgage",
       "provider": "htzone",
       "title": "הטבות במשכנתא ובנדל\"ן",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -419,13 +1021,23 @@
       "source": "https://www.bankhapoalim.co.il/he/open-account/high-tech-zone",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["משכנתא", "נדלן", "דיור"]
+      "tags": [
+        "משכנתא",
+        "נדלן",
+        "דיור"
+      ],
+      "merchants": [
+        "בנק הפועלים"
+      ]
     },
     {
       "id": "htzone-insurance",
       "provider": "htzone",
       "title": "ביטוח נסיעות לחו\"ל בתנאים מועדפים (הראל)",
-      "categories": ["insurance", "travel_abroad"],
+      "categories": [
+        "insurance",
+        "travel_abroad"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -436,13 +1048,22 @@
       "source": "https://www.htzone.co.il/sale/139",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["ביטוח נסיעות", "הראל", "כפל ביטוח"]
+      "tags": [
+        "ביטוח נסיעות",
+        "הראל",
+        "כפל ביטוח"
+      ],
+      "merchants": [
+        "הראל"
+      ]
     },
     {
       "id": "htzcard-fx",
       "provider": "htzone_card",
       "title": "עמלת המרת מט\"ח 1% במקום 3%",
-      "categories": ["travel_abroad"],
+      "categories": [
+        "travel_abroad"
+      ],
       "kind": "percent",
       "value": 2,
       "capPerTx": null,
@@ -453,13 +1074,21 @@
       "source": "https://il.bee.deals/deals/RO9bbbc",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חול", "המרת מטבע", "מטח", "אתרים זרים"]
+      "tags": [
+        "חול",
+        "המרת מטבע",
+        "מטח",
+        "אתרים זרים"
+      ],
+      "merchants": []
     },
     {
       "id": "htzcard-cash-abroad",
       "provider": "htzone_card",
       "title": "משיכת מזומן בחו\"ל 2.35% במקום 3%",
-      "categories": ["travel_abroad"],
+      "categories": [
+        "travel_abroad"
+      ],
       "kind": "percent",
       "value": 0.65,
       "capPerTx": null,
@@ -470,13 +1099,20 @@
       "source": "https://www.hon.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["משיכת מזומן", "חול", "כספומט"]
+      "tags": [
+        "משיכת מזומן",
+        "חול",
+        "כספומט"
+      ],
+      "merchants": []
     },
     {
       "id": "htzcard-fee",
       "provider": "htzone_card",
       "title": "פטור מלא מדמי כרטיס",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -487,13 +1123,20 @@
       "source": "https://www.htzone.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["דמי כרטיס", "פטור", "עמלות"]
+      "tags": [
+        "דמי כרטיס",
+        "פטור",
+        "עמלות"
+      ],
+      "merchants": []
     },
     {
       "id": "htzcard-cinema",
       "provider": "htzone_card",
       "title": "כרטיס קולנוע 1+1 בסינמה סיטי, פעם בשבוע",
-      "categories": ["cinema"],
+      "categories": [
+        "cinema"
+      ],
       "kind": "bogo",
       "value": 0,
       "capPerTx": null,
@@ -504,13 +1147,24 @@
       "source": "https://shamanu.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["סינמה סיטי", "1+1", "שבועי", "PRO"]
+      "tags": [
+        "סינמה סיטי",
+        "1+1",
+        "שבועי",
+        "PRO"
+      ],
+      "merchants": [
+        "סינמה סיטי"
+      ]
     },
     {
       "id": "htzcard-lounge",
       "provider": "htzone_card",
       "title": "כניסה ללאונג' דן בנתב\"ג",
-      "categories": ["flights", "travel_abroad"],
+      "categories": [
+        "flights",
+        "travel_abroad"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -521,13 +1175,25 @@
       "source": "https://shamanu.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["לאונג", "טרקלין", "נתבג", "דן"]
+      "tags": [
+        "לאונג",
+        "טרקלין",
+        "נתבג",
+        "דן"
+      ],
+      "merchants": [
+        "טרקלין דן",
+        "נתב\"ג"
+      ]
     },
     {
       "id": "htzcard-insurance",
       "provider": "htzone_card",
       "title": "ביטוח נסיעות לחו\"ל דרך הכרטיס (הראל)",
-      "categories": ["insurance", "travel_abroad"],
+      "categories": [
+        "insurance",
+        "travel_abroad"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -538,13 +1204,21 @@
       "source": "https://shamanu.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["ביטוח נסיעות", "הראל"]
+      "tags": [
+        "ביטוח נסיעות",
+        "הראל"
+      ],
+      "merchants": [
+        "הראל"
+      ]
     },
     {
       "id": "htzcard-elal-points",
       "provider": "htzone_card",
       "title": "צבירת נקודות לנוסע המתמיד של אל על",
-      "categories": ["flights"],
+      "categories": [
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -555,13 +1229,21 @@
       "source": "https://shamanu.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["נקודות", "אל על", "השוואה", "ריכוז הוצאות"]
+      "tags": [
+        "נקודות",
+        "אל על",
+        "השוואה",
+        "ריכוז הוצאות"
+      ],
+      "merchants": []
     },
     {
       "id": "elal-tiers",
       "provider": "elal_matmid",
       "title": "ספי המעמדות במועדון (יהלומים)",
-      "categories": ["flights"],
+      "categories": [
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -572,13 +1254,24 @@
       "source": "https://passportnews.co.il/article/194248",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מעמד", "יהלומים", "כסופה", "זהב", "פלטינה"]
+      "tags": [
+        "מעמד",
+        "יהלומים",
+        "כסופה",
+        "זהב",
+        "פלטינה"
+      ],
+      "merchants": [
+        "אל על"
+      ]
     },
     {
       "id": "elal-flyplus",
       "provider": "elal_matmid",
       "title": "FlyPlus - קולקציית הטבות לבחירה",
-      "categories": ["flights"],
+      "categories": [
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -589,13 +1282,23 @@
       "source": "https://passportnews.co.il/article/194248",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["FlyPlus", "זהב", "פלטינה", "חדש"]
+      "tags": [
+        "FlyPlus",
+        "זהב",
+        "פלטינה",
+        "חדש"
+      ],
+      "merchants": [
+        "אל על"
+      ]
     },
     {
       "id": "elal-baggage",
       "provider": "elal_matmid",
       "title": "כבודה מוגדלת לפי מעמד",
-      "categories": ["flights"],
+      "categories": [
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -606,13 +1309,23 @@
       "source": "https://secretflights.co.il/news/matmid-elal",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["כבודה", "מזוודה", "משקל"]
+      "tags": [
+        "כבודה",
+        "מזוודה",
+        "משקל"
+      ],
+      "merchants": [
+        "אל על"
+      ]
     },
     {
       "id": "elal-no-cap",
       "provider": "elal_matmid",
       "title": "פטור מתקרת צבירה חודשית לבעלי מעמד",
-      "categories": ["flights", "banking"],
+      "categories": [
+        "flights",
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -623,13 +1336,21 @@
       "source": "https://www.isracard.co.il/flycard/private",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["תקרת צבירה", "דמי כרטיס", "מעמד יוקרה"]
+      "tags": [
+        "תקרת צבירה",
+        "דמי כרטיס",
+        "מעמד יוקרה"
+      ],
+      "merchants": []
     },
     {
       "id": "flycard-migration",
       "provider": "flycard",
       "title": "⚠️ מעבר לישראכרט - שיתוף הפעולה עם כאל מסתיים",
-      "categories": ["banking", "flights"],
+      "categories": [
+        "banking",
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -640,13 +1361,28 @@
       "source": "https://www.mako.co.il/finances-consumer/Article-1a0ec941f068d91027.htm",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["דחוף", "מעבר", "ישראכרט", "כאל", "הנפקה"]
+      "tags": [
+        "דחוף",
+        "מעבר",
+        "ישראכרט",
+        "כאל",
+        "הנפקה"
+      ],
+      "merchants": []
     },
     {
       "id": "flycard-premium-earn",
       "provider": "flycard",
       "title": "צבירה: נקודה על כל 4 ₪ (Premium)",
-      "categories": ["supermarket", "fuel", "dining", "fashion", "electronics", "flights", "pharmacy"],
+      "categories": [
+        "supermarket",
+        "fuel",
+        "dining",
+        "fashion",
+        "electronics",
+        "flights",
+        "pharmacy"
+      ],
       "kind": "points",
       "value": 4,
       "capPerTx": null,
@@ -657,13 +1393,25 @@
       "source": "https://www.americanexpress.co.il/credit-cards/flycard",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["צבירה", "נקודות", "פרימיום", "יהלומים"]
+      "tags": [
+        "צבירה",
+        "נקודות",
+        "פרימיום",
+        "יהלומים"
+      ],
+      "merchants": []
     },
     {
       "id": "flycard-standard-earn",
       "provider": "flycard",
       "title": "צבירה: נקודה על כל 5 ₪ (כרטיס רגיל)",
-      "categories": ["supermarket", "fuel", "dining", "fashion", "electronics"],
+      "categories": [
+        "supermarket",
+        "fuel",
+        "dining",
+        "fashion",
+        "electronics"
+      ],
       "kind": "points",
       "value": 5,
       "capPerTx": null,
@@ -674,13 +1422,20 @@
       "source": "https://www.hakartis.com/blog/fly-card-el-al-full-guide",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["צבירה", "נקודות", "רגיל"]
+      "tags": [
+        "צבירה",
+        "נקודות",
+        "רגיל"
+      ],
+      "merchants": []
     },
     {
       "id": "flycard-flight-bonus",
       "provider": "flycard",
       "title": "20% צבירה נוספת מטיסות אל על",
-      "categories": ["flights"],
+      "categories": [
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -691,13 +1446,22 @@
       "source": "https://www.americanexpress.co.il/credit-cards/flycard",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["טיסות", "בונוס", "צבירה"]
+      "tags": [
+        "טיסות",
+        "בונוס",
+        "צבירה"
+      ],
+      "merchants": [
+        "אל על"
+      ]
     },
     {
       "id": "flycard-fee",
       "provider": "flycard",
       "title": "דמי כרטיס",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -708,13 +1472,20 @@
       "source": "https://www.isracard.co.il/flycard/private",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["דמי כרטיס", "עלות", "כדאיות"]
+      "tags": [
+        "דמי כרטיס",
+        "עלות",
+        "כדאיות"
+      ],
+      "merchants": []
     },
     {
       "id": "mafteah-parking",
       "provider": "mafteah_discount",
       "title": "עד 3 שעות חניה חינם ביום בכחול לבן",
-      "categories": ["parking"],
+      "categories": [
+        "parking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -725,13 +1496,36 @@
       "source": "https://www.pango.co.il/benefits/discount",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חניה", "כחול לבן", "סופש", "פנגו", "3 שעות"]
+      "tags": [
+        "חניה",
+        "כחול לבן",
+        "סופש",
+        "פנגו",
+        "3 שעות"
+      ],
+      "merchants": [
+        "כחול לבן",
+        "פנגו"
+      ]
     },
     {
       "id": "mafteah-savings",
       "provider": "mafteah_discount",
       "title": "הנחות שנצברות לחיסכון מפתח דיסקונט",
-      "categories": ["supermarket", "fashion", "electronics", "furniture", "dining", "sport", "telecom", "optics", "education", "kids", "fuel", "hotels"],
+      "categories": [
+        "supermarket",
+        "fashion",
+        "electronics",
+        "furniture",
+        "dining",
+        "sport",
+        "telecom",
+        "optics",
+        "education",
+        "kids",
+        "fuel",
+        "hotels"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -742,13 +1536,21 @@
       "source": "https://www.mafteach.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חיסכון", "רשתות", "צבירה", "מאות בתי עסק"]
+      "tags": [
+        "חיסכון",
+        "רשתות",
+        "צבירה",
+        "מאות בתי עסק"
+      ],
+      "merchants": []
     },
     {
       "id": "mafteah-fashion",
       "provider": "mafteah_discount",
       "title": "כ-18% הנחה ברשתות אופנה",
-      "categories": ["fashion"],
+      "categories": [
+        "fashion"
+      ],
       "kind": "percent",
       "value": 18,
       "capPerTx": null,
@@ -759,13 +1561,20 @@
       "source": "https://www.mafteach.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["אופנה", "18%", "חיסכון"]
+      "tags": [
+        "אופנה",
+        "18%",
+        "חיסכון"
+      ],
+      "merchants": []
     },
     {
       "id": "mafteah-food",
       "provider": "mafteah_discount",
       "title": "כ-6% הנחה ברשתות מזון",
-      "categories": ["supermarket"],
+      "categories": [
+        "supermarket"
+      ],
       "kind": "percent",
       "value": 6,
       "capPerTx": null,
@@ -776,13 +1585,21 @@
       "source": "https://www.mafteach.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["סופר", "מזון", "6%", "חיסכון"]
+      "tags": [
+        "סופר",
+        "מזון",
+        "6%",
+        "חיסכון"
+      ],
+      "merchants": []
     },
     {
       "id": "mafteah-rounding",
       "provider": "mafteah_discount",
       "title": "עיגול עסקאות לחיסכון",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -793,13 +1610,24 @@
       "source": "https://www.discountbank.co.il/private/credit-cards/discount-key/key-saving/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["עיגול", "חיסכון", "מסלול"]
+      "tags": [
+        "עיגול",
+        "חיסכון",
+        "מסלול"
+      ],
+      "merchants": []
     },
     {
       "id": "green-wallet-main",
       "provider": "discount_green_wallet",
       "title": "10% הנחה מיידית על רכישות גדולות",
-      "categories": ["furniture", "electronics", "flights", "education", "kids"],
+      "categories": [
+        "furniture",
+        "electronics",
+        "flights",
+        "education",
+        "kids"
+      ],
       "kind": "percent",
       "value": 10,
       "capPerTx": null,
@@ -810,13 +1638,30 @@
       "source": "https://www.ynet.co.il/economy/article/syf1xiilwg",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["10%", "קנייה גדולה", "מיידי", "אפליקציה", "מטבח", "ריהוט"]
+      "tags": [
+        "10%",
+        "קנייה גדולה",
+        "מיידי",
+        "אפליקציה",
+        "מטבח",
+        "ריהוט"
+      ],
+      "merchants": [
+        "ארקיע",
+        "נגב קרמיקה",
+        "מיטות הולנדיה",
+        "עגליס",
+        "ביתילי"
+      ]
     },
     {
       "id": "green-wallet-merchants",
       "provider": "discount_green_wallet",
       "title": "בתי העסק המשתתפים - ומה לא נכלל",
-      "categories": ["furniture", "flights"],
+      "categories": [
+        "furniture",
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -827,13 +1672,28 @@
       "source": "https://www.poenta.co.il/article/discount-green-wallet/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["ארקיע", "ביתילי", "הולנדיה", "רשימה", "הגבלות"]
+      "tags": [
+        "ארקיע",
+        "ביתילי",
+        "הולנדיה",
+        "רשימה",
+        "הגבלות"
+      ],
+      "merchants": [
+        "ארקיע",
+        "נגב קרמיקה",
+        "מיטות הולנדיה",
+        "עגליס",
+        "ביתילי"
+      ]
     },
     {
       "id": "green-wallet-vs-mafteah",
       "provider": "discount_green_wallet",
       "title": "הארנק הירוק לא מחליף את מפתח דיסקונט",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -844,13 +1704,25 @@
       "source": "https://www.poenta.co.il/article/discount-green-wallet/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["השוואה", "מפתח דיסקונט", "שילוב"]
+      "tags": [
+        "השוואה",
+        "מפתח דיסקונט",
+        "שילוב"
+      ],
+      "merchants": []
     },
     {
       "id": "max-bizplus",
       "provider": "max",
       "title": "הטבות פלוס - הנחות במעמד החיוב באלפי בתי עסק",
-      "categories": ["dining", "fashion", "attractions", "supermarket", "sport", "pharmacy"],
+      "categories": [
+        "dining",
+        "fashion",
+        "attractions",
+        "supermarket",
+        "sport",
+        "pharmacy"
+      ],
       "kind": "percent",
       "value": 20,
       "capPerTx": null,
@@ -861,13 +1733,24 @@
       "source": "https://www.max.co.il/benefits/bizplus",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מעמד החיוב", "אוטומטי", "אלפי בתי עסק"]
+      "tags": [
+        "מעמד החיוב",
+        "אוטומטי",
+        "אלפי בתי עסק"
+      ],
+      "merchants": []
     },
     {
       "id": "max-pinuk",
       "provider": "max",
       "title": "נקודות פינוק",
-      "categories": ["supermarket", "fuel", "dining", "fashion", "electronics"],
+      "categories": [
+        "supermarket",
+        "fuel",
+        "dining",
+        "fashion",
+        "electronics"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -878,13 +1761,20 @@
       "source": "https://www.max.co.il/cards",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["נקודות פינוק", "צבירה", "תקרה חודשית"]
+      "tags": [
+        "נקודות פינוק",
+        "צבירה",
+        "תקרה חודשית"
+      ],
+      "merchants": []
     },
     {
       "id": "max-theater",
       "provider": "max",
       "title": "הנחות להצגות ומופעים",
-      "categories": ["theater"],
+      "categories": [
+        "theater"
+      ],
       "kind": "percent",
       "value": 15,
       "capPerTx": null,
@@ -895,13 +1785,21 @@
       "source": "https://www.max.co.il/benefits/plays",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["הצגות", "מופעים"]
+      "tags": [
+        "הצגות",
+        "מופעים"
+      ],
+      "merchants": []
     },
     {
       "id": "max-abroad",
       "provider": "max",
       "title": "הטבות לטסים לחו\"ל וביטוח נסיעות",
-      "categories": ["travel_abroad", "insurance", "flights"],
+      "categories": [
+        "travel_abroad",
+        "insurance",
+        "flights"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -912,13 +1810,25 @@
       "source": "https://www.max.co.il/benefits/abroadbenefits",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חול", "ביטוח נסיעות", "אטרקציות", "כפל ביטוח"]
+      "tags": [
+        "חול",
+        "ביטוח נסיעות",
+        "אטרקציות",
+        "כפל ביטוח"
+      ],
+      "merchants": []
     },
     {
       "id": "cal-benefits",
       "provider": "cal",
       "title": "הטבות ושוברים דיגיטליים באפליקציה",
-      "categories": ["dining", "attractions", "cinema", "flights", "fashion"],
+      "categories": [
+        "dining",
+        "attractions",
+        "cinema",
+        "flights",
+        "fashion"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -929,13 +1839,188 @@
       "source": "https://www.cal-online.co.il/benefits/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מתחלף", "אפליקציה", "שוברים דיגיטליים"]
+      "tags": [
+        "מתחלף",
+        "אפליקציה",
+        "שוברים דיגיטליים"
+      ],
+      "merchants": []
+    },
+    {
+      "id": "dreamcard-main",
+      "provider": "dreamcard",
+      "title": "מועדון דרים קארד - ההטבה תלויה במצב",
+      "categories": [
+        "fashion",
+        "kids",
+        "sport",
+        "furniture"
+      ],
+      "merchants": [
+        "פוקס",
+        "פוקס הום",
+        "ללין",
+        "בילבונג",
+        "מנגו",
+        "יאנגה",
+        "טרמינל X",
+        "אמריקן איגל",
+        "דרים ספורט",
+        "פוט לוקר",
+        "קויק סילבר",
+        "בורד ריידרס",
+        "Aerie",
+        "The Children's Place"
+      ],
+      "kind": "cashback",
+      "value": 10,
+      "capPerTx": null,
+      "minSpend": 0,
+      "requiresCard": null,
+      "variants": [
+        {
+          "id": "regular",
+          "label": "קנייה רגילה",
+          "kind": "cashback",
+          "value": 10,
+          "conditions": "10% צבירת נקודות קאשבק מסכום התשלום בפועל. הנקודות נצברות למועדון ולא יורדות בקופה."
+        },
+        {
+          "id": "birthday",
+          "label": "חודש יום ההולדת שלי",
+          "kind": "percent",
+          "value": 30,
+          "conditions": "30% הנחה כהטבת יום הולדת. דווח כתקף פעם אחת בכל מותג של המועדון - כלומר אפשר לממש בנפרד בפוקס, בפוקס הום, בללין וכו'. שווה לתכנן קניות גדולות לחודש הזה."
+        },
+        {
+          "id": "joining",
+          "label": "הצטרפתי עכשיו למועדון",
+          "kind": "fixed",
+          "value": 100,
+          "conditions": "100 ₪ מתנת הצטרפות, מימוש חד פעמי באחד ממותגי המועדון."
+        },
+        {
+          "id": "vip_online",
+          "label": "רכישה באתר עם Dream Card VIP של מקס",
+          "kind": "cashback",
+          "value": 15,
+          "conditions": "בכרטיס Dream Card VIP של מקס דווחה צבירה של 15% מכל רכישה באתר. בנוסף דווחה הטבת הצטרפות של 50 ₪ ו-150 ₪ למימוש בתנאים מסוימים."
+        }
+      ],
+      "conditions": "לרשת פוקס יש כמה הטבות שונות שלא ניתן לשלב סתם כך, ולכן המערכת שואלת מה המצב שלכם לפני שהיא עונה. דווח גם שאפשר לשלב קוד קופון יחד עם מימוש נקודות המועדון וליצור הנחה כפולה - שווה לבדוק קופון פעיל לפני שמשלמים.",
+      "validUntil": null,
+      "source": "https://fox.co.il/pages/dream-card-%D7%94%D7%98%D7%91%D7%95%D7%AA-%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F",
+      "checkedAt": "2026-08-10",
+      "status": "unverified",
+      "tags": [
+        "פוקס",
+        "דרים קארד",
+        "יום הולדת",
+        "קאשבק",
+        "קופון"
+      ]
+    },
+    {
+      "id": "htzone-dreamcard-voucher",
+      "provider": "htzone",
+      "title": "שובר Dream Card בשווי 400 ₪ במחיר מיוחד",
+      "categories": [
+        "fashion",
+        "kids",
+        "sport"
+      ],
+      "merchants": [
+        "פוקס",
+        "פוקס הום",
+        "ללין",
+        "פוט לוקר",
+        "דרים ספורט"
+      ],
+      "kind": "percent",
+      "value": 20,
+      "capPerTx": null,
+      "minSpend": 0,
+      "requiresCard": null,
+      "conditions": "המועדון מוכר שוברי Dream Card בהנחה. זו לרוב הדרך הזולה ביותר לקנות בפוקס: קונים שובר בהנחה, ואז משלמים איתו. שיעור ההנחה על השובר משתנה - חובה לבדוק את המחיר בפועל באתר המועדון. שווה לבדוק אם ניתן לצבור נקודות דרים קארד גם בתשלום בשובר.",
+      "validUntil": null,
+      "source": "https://www.htzone.co.il/webview/102501/sale/419",
+      "checkedAt": "2026-08-10",
+      "status": "unverified",
+      "tags": [
+        "פוקס",
+        "שובר",
+        "דרים קארד",
+        "תו קנייה"
+      ]
+    },
+    {
+      "id": "example-hotel",
+      "provider": "behatzdaa",
+      "title": "דוגמה להמחשה - מלון לדוגמה: הנחה משתנה לפי יום ותאריך",
+      "categories": [
+        "hotels"
+      ],
+      "merchants": [
+        "מלון לדוגמה"
+      ],
+      "kind": "percent",
+      "value": 10,
+      "capPerTx": null,
+      "minSpend": 0,
+      "requiresCard": "כרטיס בהצדעה של מקס",
+      "variants": [
+        {
+          "id": "midweek",
+          "label": "אמצע שבוע (ראשון עד רביעי)",
+          "kind": "percent",
+          "value": 20,
+          "validDays": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "conditions": "ההנחה הגבוהה ניתנת רק באמצע השבוע."
+        },
+        {
+          "id": "weekend",
+          "label": "סוף שבוע (חמישי עד שבת)",
+          "kind": "percent",
+          "value": 8,
+          "validDays": [
+            4,
+            5,
+            6
+          ],
+          "conditions": "בסופי שבוע ההנחה נמוכה משמעותית."
+        }
+      ],
+      "blackout": [
+        {
+          "from": "2026-09-11",
+          "to": "2026-10-04",
+          "note": "חגי תשרי"
+        }
+      ],
+      "conditions": "⚠️ זו רשומת דוגמה שנוצרה כדי להדגים את מנגנון התאריכים - היא אינה הטבה אמיתית. היא מראה איך נראית הטבה שההנחה בה משתנה לפי יום בשבוע, ושיש בה תקופת חסימה בחגים. החליפו אותה בנתוני מלון אמיתיים, או מחקו אותה בלשונית הניהול.",
+      "validUntil": null,
+      "source": "",
+      "checkedAt": "2026-08-10",
+      "status": "example",
+      "tags": [
+        "דוגמה",
+        "מלון",
+        "תאריכים",
+        "חגים"
+      ]
     },
     {
       "id": "onezero-fx",
       "provider": "onezero",
       "title": "0% עמלת המרת מטבע ברכישות בכרטיס",
-      "categories": ["travel_abroad"],
+      "categories": [
+        "travel_abroad"
+      ],
       "kind": "percent",
       "value": 3,
       "capPerTx": null,
@@ -946,13 +2031,21 @@
       "source": "https://www.onezerobank.com/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["חול", "המרת מטבע", "0%", "השוואה"]
+      "tags": [
+        "חול",
+        "המרת מטבע",
+        "0%",
+        "השוואה"
+      ],
+      "merchants": []
     },
     {
       "id": "onezero-fees",
       "provider": "onezero",
       "title": "פטור מעמלות עו\"ש ומדמי כרטיס במסלול ZERO",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -963,13 +2056,22 @@
       "source": "https://www.globes.co.il/news/article.aspx?did=1001509103",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["עמלות", "פטור", "עוש", "החזר"]
+      "tags": [
+        "עמלות",
+        "פטור",
+        "עוש",
+        "החזר"
+      ],
+      "merchants": []
     },
     {
       "id": "onezero-reserve",
       "provider": "onezero",
       "title": "הטבות למשרתי מילואים",
-      "categories": ["banking", "travel_abroad"],
+      "categories": [
+        "banking",
+        "travel_abroad"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -980,13 +2082,21 @@
       "source": "https://www.onezerobank.com/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["מילואים", "עמלות", "פטור", "חופף"]
+      "tags": [
+        "מילואים",
+        "עמלות",
+        "פטור",
+        "חופף"
+      ],
+      "merchants": []
     },
     {
       "id": "onezero-trading",
       "provider": "onezero",
       "title": "מסחר בניירות ערך ללא עמלות ודמי משמורת",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -997,13 +2107,21 @@
       "source": "https://www.bizportal.co.il/general/news/article/20024823",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["השקעות", "בורסה", "עמלות", "השוואה"]
+      "tags": [
+        "השקעות",
+        "בורסה",
+        "עמלות",
+        "השוואה"
+      ],
+      "merchants": []
     },
     {
       "id": "discount-account",
       "provider": "discount_bank",
       "title": "מסלול עמלות והטבות חשבון",
-      "categories": ["banking"],
+      "categories": [
+        "banking"
+      ],
       "kind": "info",
       "value": 0,
       "capPerTx": null,
@@ -1014,7 +2132,13 @@
       "source": "https://www.discountbank.co.il/",
       "checkedAt": "2026-08-10",
       "status": "unverified",
-      "tags": ["עמלות", "מסלול", "השוואה", "למלא"]
+      "tags": [
+        "עמלות",
+        "מסלול",
+        "השוואה",
+        "למלא"
+      ],
+      "merchants": []
     }
   ]
 }

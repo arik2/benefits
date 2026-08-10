@@ -20,6 +20,14 @@ let db = null;          // מסד הנתונים הפעיל
 let baseDb = null;      // נתוני הבסיס מהקובץ, לצורך איפוס והשוואה
 const TODAY = new Date();
 
+/*
+ * בחירות המשתמש כשלהטבה יש כמה אפשרויות ("קנייה רגילה" מול "יום הולדת").
+ * נשמר לפי מזהה הטבה, ומתאפס בכל חיפוש חדש כדי שבחירה משאלה קודמת
+ * לא תזלוג לשאלה הבאה ותשנה תשובה בלי שהמשתמש ישים לב.
+ */
+let variantPicks = {};
+let lastQuery = null;   // מאפשר להריץ מחדש את אותה שאילתה אחרי בחירה
+
 /* ---------- עזרים ---------- */
 
 const $ = (sel) => document.querySelector(sel);
@@ -159,46 +167,70 @@ function buildSelects() {
   $('#f-provider').innerHTML = provOptions;
   $('#browse-provider').innerHTML = '<option value="">הכל</option>' + provOptions;
 
+  // רשימת בתי העסק המוכרים, להשלמה אוטומטית בשדה החיפוש
+  $('#merchant-list').innerHTML = Engine.allMerchants(db)
+    .map((m) => `<option value="${escapeHtml(m)}"></option>`)
+    .join('');
+
   const examples = [
-    'איפה כדאי לקנות מקרר',
-    'הנחות על מלון בארץ',
-    'סרט בקולנוע',
-    'קניות בסופר',
-    'הוצאות בחול',
-    'עמלות בנק',
+    { merchant: 'פוקס', amount: 400 },
+    { q: 'איפה כדאי לקנות מקרר', amount: 4000 },
+    { q: 'הנחות על מלון בארץ', amount: 2000 },
+    { q: 'סרט בקולנוע' },
+    { q: 'הוצאות בחול', amount: 5000 },
+    { q: 'עמלות בנק' },
   ];
   $('#ask-examples').innerHTML = examples
-    .map((q) => `<button class="chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`)
+    .map((ex, i) => {
+      const label = ex.merchant ? `${ex.merchant} ב-${ex.amount} ₪` : ex.q;
+      return `<button class="chip" data-example="${i}">${escapeHtml(label)}</button>`;
+    })
     .join('');
   $('#ask-examples').addEventListener('click', (e) => {
     const btn = e.target.closest('.chip');
     if (!btn) return;
-    $('#ask-q').value = btn.dataset.q;
+    const ex = examples[Number(btn.dataset.example)];
+    $('#ask-merchant').value = ex.merchant || '';
+    $('#ask-q').value = ex.q || '';
+    $('#ask-amount').value = ex.amount || '';
     runAsk();
   });
 }
 
 /* ---------- כרטיס תוצאה ---------- */
 
+function statusBadge(status) {
+  if (status === 'verified') return '<span class="badge verified">מאומת</span>';
+  if (status === 'example') return '<span class="badge example">דוגמה — לא אמיתי</span>';
+  return '<span class="badge unverified">לאימות</span>';
+}
+
 function resultCard(row, rank) {
   const b = row.benefit;
+  const ev = row.evaluation || { needsChoice: false, choices: [], chosen: null, active: true };
   const prov = providerOf(b.provider);
-  const isBest = rank === 0 && row.saving.computable && row.saving.amount > 0;
+
+  // הטבה שעדיין מחכה להבהרה אינה יכולה להיות "הכי משתלם" — המספר שלה
+  // הוא תקרה ולא תשובה, ולהכתיר אותה יטעה.
+  const isBest = rank === 0 && row.saving.computable && row.saving.amount > 0
+    && !ev.needsChoice && !row.saving.isUpperBound;
 
   const badges = [];
   if (isBest) badges.push('<span class="badge rank">הכי משתלם</span>');
-  badges.push(b.status === 'verified'
-    ? '<span class="badge verified">מאומת</span>'
-    : '<span class="badge unverified">לאימות</span>');
+  badges.push(statusBadge(b.status));
+  if (!ev.active) badges.push('<span class="badge expired">לא תקף בתאריך שנבחר</span>');
   if (row.expiry.expired) badges.push('<span class="badge expired">פג תוקף</span>');
   else if (row.expiry.soon) badges.push(`<span class="badge expiring">נותרו ${row.expiry.daysLeft} ימים</span>`);
   if (b.requiresCard) badges.push(`<span class="badge card">חובה: ${escapeHtml(b.requiresCard)}</span>`);
 
   const cats = (b.categories || []).map((id) => categoryOf(id).label).join(' · ');
+  const merchants = (b.merchants || []).length
+    ? `<div class="merchants">${(b.merchants || []).map((m) => `<span class="merchant">${escapeHtml(m)}</span>`).join('')}</div>`
+    : '';
 
   const savingBox = row.saving.computable
-    ? `<div class="saving">
-         <span class="num">${Engine.formatIls(row.saving.amount)}</span>
+    ? `<div class="saving${row.saving.isUpperBound ? ' bound' : ''}">
+         <span class="num">${row.saving.isUpperBound ? 'עד ' : ''}${Engine.formatIls(row.saving.amount)}</span>
          <span class="cap">${escapeHtml(row.saving.label)}</span>
        </div>`
     : `<div class="saving flat">
@@ -206,12 +238,36 @@ function resultCard(row, rank) {
          <span class="cap">${escapeHtml(row.saving.label)}</span>
        </div>`;
 
+  // שאלת ההבהרה: כשיש כמה אפשרויות, שואלים במקום לנחש.
+  let choiceBlock = '';
+  if (ev.needsChoice) {
+    const options = ev.choices.map((c) => {
+      const hint = c.saving.computable ? Engine.formatIls(c.saving.amount) : c.saving.label;
+      return `<button class="chip choice-chip" data-pick-benefit="${escapeHtml(b.id)}" data-pick-variant="${escapeHtml(c.id)}">
+                ${escapeHtml(c.label)} <span class="chip-val">${escapeHtml(hint)}</span>
+              </button>`;
+    }).join('');
+    choiceBlock = `
+      <div class="choice">
+        <div class="choice-q">כדי לענות במדויק — מה מתאים לכם?</div>
+        <div class="chips">${options}</div>
+      </div>`;
+  } else if (ev.chosen) {
+    choiceBlock = `
+      <div class="choice chosen">
+        <div class="choice-q">נבחר: <strong>${escapeHtml(ev.chosen.label)}</strong>
+          <button class="link-btn" data-pick-benefit="${escapeHtml(b.id)}" data-pick-variant="">שנה</button>
+        </div>
+        ${ev.chosen.conditions ? `<div class="result-body">${escapeHtml(ev.chosen.conditions)}</div>` : ''}
+      </div>`;
+  }
+
   const sourceLink = b.source
     ? `<a class="link-btn" href="${escapeHtml(b.source)}" target="_blank" rel="noopener">מקור</a>`
     : '';
 
   return `
-    <article class="result${isBest ? ' best' : ''}">
+    <article class="result${isBest ? ' best' : ''}${b.status === 'example' ? ' is-example' : ''}">
       <div class="result-head">
         <div>
           <h3 class="result-title">${escapeHtml(b.title)}</h3>
@@ -219,7 +275,9 @@ function resultCard(row, rank) {
         </div>
         ${savingBox}
       </div>
+      ${merchants}
       <div class="badges">${badges.join('')}</div>
+      ${choiceBlock}
       ${b.conditions ? `<div class="result-body">${escapeHtml(b.conditions)}</div>` : ''}
       <div class="result-actions">
         ${sourceLink}
@@ -238,43 +296,104 @@ function renderResults(container, rows, emptyText) {
 
 // עריכה מכל מקום שבו מוצג כרטיס תוצאה
 document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-edit]');
-  if (!btn) return;
-  editBenefit(btn.dataset.edit);
+  const editBtn = e.target.closest('[data-edit]');
+  if (editBtn) { editBenefit(editBtn.dataset.edit); return; }
+
+  // בחירת אפשרות בשאלת ההבהרה — מריץ מחדש את אותה שאילתה עם הבחירה
+  const pickBtn = e.target.closest('[data-pick-benefit]');
+  if (pickBtn) {
+    const id = pickBtn.dataset.pickBenefit;
+    const variant = pickBtn.dataset.pickVariant;
+    if (variant) variantPicks[id] = variant;
+    else delete variantPicks[id];
+    rerunLastQuery();
+  }
 });
 
-/* ---------- שאלה חופשית ---------- */
-
-function bindAsk() {
-  $('#ask-go').addEventListener('click', runAsk);
-  $('#ask-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') runAsk(); });
+// תאריך שנבחר בטופס, או היום אם לא נבחר
+function dateFrom(selector) {
+  const raw = $(selector).value;
+  if (!raw) return TODAY;
+  const d = new Date(raw + 'T12:00:00');
+  return isNaN(d.getTime()) ? TODAY : d;
 }
 
-function runAsk() {
+function queryOpts(dateSelector) {
+  return { date: dateFrom(dateSelector), variantPicks };
+}
+
+function rerunLastQuery() {
+  if (lastQuery === 'ask') runAsk(true);
+  else if (lastQuery === 'compare') runCompare(true);
+}
+
+/* ---------- שאלה חופשית ובית עסק ---------- */
+
+function bindAsk() {
+  $('#ask-go').addEventListener('click', () => runAsk());
+  $('#ask-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') runAsk(); });
+  $('#ask-merchant').addEventListener('keydown', (e) => { if (e.key === 'Enter') runAsk(); });
+}
+
+function runAsk(keepPicks) {
+  const merchant = $('#ask-merchant').value.trim();
   const q = $('#ask-q').value.trim();
   const amount = parseFloat($('#ask-amount').value) || 0;
-  if (!q) { toast('כתבו מה אתם מחפשים'); return; }
 
-  const rows = Engine.search(db, q, amount, TODAY);
-  renderResults(
-    $('#ask-results'),
-    rows,
-    'לא נמצאה הטבה מתאימה. נסו מילים אחרות, או הוסיפו את ההטבה בלשונית "ניהול".'
-  );
+  if (!merchant && !q) { toast('כתבו שם חנות או שאלה'); return; }
+  if (!keepPicks) variantPicks = {};
+  lastQuery = 'ask';
+
+  const opts = queryOpts('#ask-date');
+
+  // שם חנות הוא אות חזק וספציפי, ולכן מקבל עדיפות על שאלה חופשית.
+  let rows;
+  let emptyText;
+  if (merchant) {
+    rows = Engine.searchByMerchant(db, merchant, amount, TODAY, opts);
+    emptyText = `לא נמצאה הטבה רשומה עבור "${merchant}". `
+      + 'ייתכן שיש הטבה כללית על הקטגוריה — נסו לחפש בשאלה חופשית, '
+      + 'או הוסיפו את ההטבה בלשונית "ניהול".';
+    // אם אין התאמה לבית העסק, נופלים לחיפוש חופשי במקום להחזיר מסך ריק.
+    if (!rows.length) {
+      const fallback = Engine.search(db, merchant + ' ' + q, amount, TODAY, opts);
+      if (fallback.length) {
+        renderResults($('#ask-results'), fallback, emptyText);
+        prependNote($('#ask-results'),
+          `אין הטבה שרשומה במפורש על "${escapeHtml(merchant)}". אלה הטבות כלליות שאולי רלוונטיות — בדקו את התנאים.`);
+        return;
+      }
+    }
+  } else {
+    rows = Engine.search(db, q, amount, TODAY, opts);
+    emptyText = 'לא נמצאה הטבה מתאימה. נסו מילים אחרות, או הוסיפו את ההטבה בלשונית "ניהול".';
+  }
+
+  renderResults($('#ask-results'), rows, emptyText);
+}
+
+function prependNote(container, html) {
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.innerHTML = html;
+  container.prepend(note);
 }
 
 /* ---------- השוואה ---------- */
 
 function bindCompare() {
-  $('#cmp-go').addEventListener('click', runCompare);
+  $('#cmp-go').addEventListener('click', () => runCompare());
 }
 
-function runCompare() {
+function runCompare(keepPicks) {
   const cat = $('#cmp-cat').value;
   const amount = parseFloat($('#cmp-amount').value) || 0;
   if (!amount) { toast('הזינו סכום'); return; }
 
-  const rows = Engine.rankByCategory(db, cat, amount, TODAY);
+  if (!keepPicks) variantPicks = {};
+  lastQuery = 'compare';
+
+  const rows = Engine.rankByCategory(db, cat, amount, TODAY, queryOpts('#cmp-date'));
   renderResults(
     $('#cmp-results'),
     rows,
@@ -299,6 +418,7 @@ function renderBrowse() {
     .map((b) => ({
       benefit: b,
       saving: { amount: 0, label: Engine.describeRate(b), computable: false },
+      evaluation: { needsChoice: false, choices: [], chosen: null, active: true },
       expiry: Engine.expiryState(b, TODAY),
     }))
     .filter((row) => !onlyExpiring || row.expiry.expired || row.expiry.soon)
@@ -309,9 +429,87 @@ function renderBrowse() {
 
 /* ---------- ניהול ---------- */
 
+/* ---------- עורך האפשרויות (variants) ---------- */
+
+const KIND_LABELS = {
+  percent: 'אחוז הנחה',
+  cashback: 'אחוז החזר',
+  fixed: 'סכום קבוע ₪',
+  bogo: '1+1',
+  points: 'נקודות',
+  info: 'מידע בלבד',
+};
+
+function variantRowHtml(v, index) {
+  const kindOptions = Object.entries(KIND_LABELS)
+    .map(([k, label]) => `<option value="${k}"${(v.kind || 'percent') === k ? ' selected' : ''}>${label}</option>`)
+    .join('');
+
+  const days = Engine.DAY_NAMES.map((name, d) => {
+    const checked = (v.validDays || []).includes(d) ? ' checked' : '';
+    return `<label class="day"><input type="checkbox" data-day="${d}"${checked}><span>${name.slice(0, 2)}</span></label>`;
+  }).join('');
+
+  return `
+    <div class="variant-row" data-index="${index}">
+      <div class="variant-head">
+        <input type="text" class="v-label" placeholder="מתי זה חל? למשל: חודש יום הולדת" value="${escapeHtml(v.label || '')}">
+        <button type="button" class="link-btn v-remove">הסר</button>
+      </div>
+      <div class="grid2">
+        <select class="v-kind">${kindOptions}</select>
+        <input type="number" class="v-value" step="0.01" min="0" placeholder="ערך" value="${v.value != null ? v.value : ''}">
+      </div>
+      <input type="text" class="v-conditions" placeholder="תנאים" value="${escapeHtml(v.conditions || '')}">
+      <div class="days">
+        <span class="days-label">תקף בימים (ריק = כל הימים):</span>
+        ${days}
+      </div>
+    </div>`;
+}
+
+function renderVariants(variants) {
+  $('#f-variants').innerHTML = (variants || []).map(variantRowHtml).join('');
+}
+
+function readVariantsFromForm() {
+  return $$('#f-variants .variant-row').map((row, i) => {
+    const label = row.querySelector('.v-label').value.trim();
+    const kind = row.querySelector('.v-kind').value;
+    const rawValue = row.querySelector('.v-value').value;
+    const validDays = Array.from(row.querySelectorAll('[data-day]'))
+      .filter((cb) => cb.checked)
+      .map((cb) => Number(cb.dataset.day));
+
+    return {
+      id: 'v' + i,
+      label: label || 'אפשרות ' + (i + 1),
+      kind,
+      value: rawValue === '' ? 0 : parseFloat(rawValue),
+      conditions: row.querySelector('.v-conditions').value.trim(),
+      validDays: validDays.length ? validDays : null,
+    };
+  });
+}
+
 function bindManage() {
   $('#f-kind').addEventListener('change', updateValueLabel);
   updateValueLabel();
+
+  $('#f-add-variant').addEventListener('click', () => {
+    const current = readVariantsFromForm();
+    current.push({ label: '', kind: 'percent', value: null, conditions: '', validDays: null });
+    renderVariants(current);
+  });
+
+  $('#f-variants').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('v-remove')) return;
+    const current = readVariantsFromForm();
+    current.splice(Number(e.target.closest('.variant-row').dataset.index), 1);
+    renderVariants(current);
+  });
+
+  $('#btn-del-examples').addEventListener('click', deleteExamples);
 
   $('#f-save').addEventListener('click', saveBenefitFromForm);
   $('#f-clear').addEventListener('click', clearForm);
@@ -340,6 +538,8 @@ function updateValueLabel() {
 function clearForm() {
   $('#f-id').value = '';
   $('#f-title').value = '';
+  $('#f-merchants').value = '';
+  renderVariants([]);
   $('#f-value').value = '10';
   $('#f-cap').value = '';
   $('#f-min').value = '';
@@ -362,6 +562,8 @@ function editBenefit(id) {
   $('#f-id').value = b.id;
   $('#f-provider').value = b.provider;
   $('#f-title').value = b.title || '';
+  $('#f-merchants').value = (b.merchants || []).join(', ');
+  renderVariants(b.variants || []);
   $('#f-kind').value = b.kind || 'percent';
   $('#f-value').value = b.value != null ? b.value : '';
   $('#f-cap').value = b.capPerTx != null ? b.capPerTx : '';
@@ -371,7 +573,7 @@ function editBenefit(id) {
   $('#f-conditions').value = b.conditions || '';
   $('#f-source').value = b.source || '';
   $('#f-tags').value = (b.tags || []).join(', ');
-  $('#f-status').value = b.status === 'verified' ? 'verified' : 'unverified';
+  $('#f-status').value = ['verified', 'example'].includes(b.status) ? b.status : 'unverified';
   Array.from($('#f-categories').options).forEach((o) => {
     o.selected = (b.categories || []).includes(o.value);
   });
@@ -397,11 +599,15 @@ function saveBenefitFromForm() {
     return raw === '' ? null : parseFloat(raw);
   };
 
+  const variants = readVariantsFromForm();
+
   const record = {
     id: $('#f-id').value || 'local-' + Date.now().toString(36),
     provider: $('#f-provider').value,
     title,
+    merchants: $('#f-merchants').value.split(',').map((m) => m.trim()).filter(Boolean),
     categories,
+    variants,
     kind,
     value: (kind === 'info' || kind === 'bogo') ? 0 : (parseFloat($('#f-value').value) || 0),
     capPerTx: numOrNull('#f-cap'),
@@ -421,9 +627,21 @@ function saveBenefitFromForm() {
 
   saveDb();
   clearForm();
+  buildSelects();   // בית עסק חדש צריך להופיע בהשלמה האוטומטית
   renderManageList();
   renderBrowse();
   toast(idx >= 0 ? 'ההטבה עודכנה' : 'ההטבה נוספה');
+}
+
+function deleteExamples() {
+  const examples = db.benefits.filter((b) => b.status === 'example');
+  if (!examples.length) { toast('אין רשומות דוגמה'); return; }
+  if (!confirm(`למחוק ${examples.length} רשומות דוגמה?`)) return;
+  db.benefits = db.benefits.filter((b) => b.status !== 'example');
+  saveDb();
+  renderManageList();
+  renderBrowse();
+  toast('רשומות הדוגמה נמחקו');
 }
 
 function deleteBenefit(id) {

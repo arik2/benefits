@@ -43,11 +43,25 @@
     <!-- ===== שאלה חופשית ===== -->
     <section id="panel-ask" class="panel active">
       <div class="card">
-        <label for="ask-q">מה אתם מחפשים?</label>
+        <label for="ask-merchant">איפה אתם קונים? (שם החנות או המלון)</label>
+        <input type="text" id="ask-merchant" list="merchant-list" placeholder="למשל: פוקס" autocomplete="off">
+        <datalist id="merchant-list"></datalist>
+
+        <label for="ask-q">או שאלה חופשית</label>
         <input type="text" id="ask-q" placeholder="למשל: איפה כדאי לקנות מקרר?" autocomplete="off">
-        <label for="ask-amount">סכום משוער (₪) — לא חובה</label>
-        <input type="number" id="ask-amount" min="0" step="10" placeholder="למשל 3000">
-        <button class="btn primary" id="ask-go">חפש</button>
+
+        <div class="grid2">
+          <div>
+            <label for="ask-amount">סכום (₪)</label>
+            <input type="number" id="ask-amount" min="0" step="10" placeholder="400">
+          </div>
+          <div>
+            <label for="ask-date">תאריך</label>
+            <input type="date" id="ask-date">
+          </div>
+        </div>
+
+        <button class="btn primary" id="ask-go">בדוק</button>
         <div class="chips" id="ask-examples"></div>
       </div>
       <div id="ask-results" class="results"></div>
@@ -58,8 +72,16 @@
       <div class="card">
         <label for="cmp-cat">קטגוריה</label>
         <select id="cmp-cat"></select>
-        <label for="cmp-amount">כמה אתם עומדים להוציא? (₪)</label>
-        <input type="number" id="cmp-amount" min="0" step="10" value="500">
+        <div class="grid2">
+          <div>
+            <label for="cmp-amount">כמה תוציאו? (₪)</label>
+            <input type="number" id="cmp-amount" min="0" step="10" value="500">
+          </div>
+          <div>
+            <label for="cmp-date">תאריך</label>
+            <input type="date" id="cmp-date">
+          </div>
+        </div>
         <button class="btn primary" id="cmp-go">מאיפה הכי כדאי?</button>
       </div>
       <div id="cmp-results" class="results"></div>
@@ -90,6 +112,10 @@
 
         <label for="f-title">כותרת ההטבה *</label>
         <input type="text" id="f-title" placeholder="למשל: 15% הנחה ברמי לוי">
+
+        <label for="f-merchants">בתי עסק (מופרדים בפסיק)</label>
+        <input type="text" id="f-merchants" placeholder="פוקס, פוקס הום, ללין">
+        <p class="hint">שם החנות הוא מה שהופך את החיפוש לשימושי. מלאו אותו כשאפשר.</p>
 
         <label for="f-categories">קטגוריות * (אפשר לבחור כמה)</label>
         <select id="f-categories" multiple size="7"></select>
@@ -124,6 +150,17 @@
         <label for="f-until">בתוקף עד</label>
         <input type="date" id="f-until">
 
+        <fieldset class="variants">
+          <legend>הטבות שונות באותו מקום</legend>
+          <p class="hint">
+            כשיש כמה הטבות שתלויות במה שקונים או מתי — למשל 30% ביום הולדת
+            מול 10% רגיל — הוסיפו כאן שורה לכל אפשרות, והמערכת תשאל אתכם
+            במקום לנחש.
+          </p>
+          <div id="f-variants"></div>
+          <button type="button" class="btn" id="f-add-variant">הוסף אפשרות</button>
+        </fieldset>
+
         <label for="f-conditions">תנאים והערות</label>
         <textarea id="f-conditions" rows="3" placeholder="מה בדיוק ראיתם, ואיפה"></textarea>
 
@@ -137,6 +174,7 @@
         <select id="f-status">
           <option value="verified">מאומת — ראיתי את זה בעצמי בחשבון</option>
           <option value="unverified" selected>לאימות — עוד לא בדקתי</option>
+          <option value="example">דוגמה — רשומת הדגמה, לא הטבה אמיתית</option>
         </select>
 
         <div class="row">
@@ -155,6 +193,7 @@
         </div>
         <div class="row">
           <button class="btn" id="btn-sync">סנכרון ל-GitHub</button>
+          <button class="btn" id="btn-del-examples">מחיקת רשומות הדוגמה</button>
           <button class="btn danger" id="btn-reset">איפוס לנתוני הבסיס</button>
         </div>
         <p id="sync-status" class="muted"></p>

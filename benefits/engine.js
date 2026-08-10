@@ -1,6 +1,14 @@
 /*
  * engine.js — לוגיקת החיפוש והחישוב.
  * מופרד מה-UI בכוונה: אפשר לבדוק אותו בנפרד, והוא לא נוגע ב-DOM.
+ *
+ * שלוש רמות של הטבה:
+ *   1. הטבה רחבה על קטגוריה  ("10% על אופנה")
+ *   2. הטבה על בית עסק מסוים ("10% בפוקס")
+ *   3. הטבה על מוצר או מצב מסוים בתוך בית העסק ("30% ביום הולדת")
+ *
+ * רמה 3 מיוצגת כ-variants. כשלהטבה יש כמה variants ואי אפשר לדעת איזה
+ * רלוונטי, המנוע לא מנחש - הוא מחזיר needsChoice, והממשק שואל את המשתמש.
  */
 
 /* ---------- עזרי טקסט ---------- */
@@ -24,7 +32,7 @@ function normalize(text) {
 const STOPWORDS = new Set(normalize(
   'איפה מאיפה כדאי לי לנצל את של עם על יש אני אנחנו מה כמה איזה איזו הכי יותר הטבה הטבות ' +
   'כרטיס מועדון לקנות קונה רוצה צריך תשלום לשלם שקל שקלים ש ח ב ה ו כ ל מ אם או גם רק כל ' +
-  'עכשיו היום מחר יכול אפשר לקבל לקחת עדיף טוב'
+  'עכשיו היום מחר יכול אפשר לקבל לקחת עדיף טוב שם משם'
 ).split(' '));
 
 function tokenize(text) {
@@ -98,16 +106,119 @@ function tokenMatches(token, targetWords) {
   return targetWords.some((w) => wordsMatch(token, w));
 }
 
+/* ---------- תחומי הטבה (variants) ---------- */
+
+/*
+ * "תחום" הוא יחידה שאפשר לחשב עליה חיסכון: או ההטבה עצמה, או אחד
+ * ה-variants שלה. variant יורש מההטבה כל שדה שלא הוגדר בו במפורש,
+ * כדי שלא נצטרך לחזור על אותם ערכים בכל שורה.
+ */
+function scopesOf(benefit) {
+  if (!benefit.variants || !benefit.variants.length) {
+    return [{
+      id: null,
+      label: null,
+      isBase: true,
+      provider: benefit.provider,
+      kind: benefit.kind,
+      value: benefit.value,
+      capPerTx: benefit.capPerTx == null ? null : benefit.capPerTx,
+      minSpend: benefit.minSpend || 0,
+      conditions: benefit.conditions || '',
+      validFrom: benefit.validFrom || null,
+      validUntil: benefit.validUntil || null,
+      validDays: benefit.validDays || null,
+      blackout: benefit.blackout || null,
+    }];
+  }
+
+  const pick = (v, key, fallback) => (v[key] === undefined || v[key] === null ? fallback : v[key]);
+
+  return benefit.variants.map((v, i) => ({
+    id: v.id || 'v' + i,
+    label: v.label || 'אפשרות ' + (i + 1),
+    isBase: false,
+    provider: benefit.provider,
+    kind: pick(v, 'kind', benefit.kind),
+    value: pick(v, 'value', benefit.value),
+    capPerTx: v.capPerTx === undefined ? (benefit.capPerTx == null ? null : benefit.capPerTx) : v.capPerTx,
+    minSpend: pick(v, 'minSpend', benefit.minSpend || 0),
+    conditions: v.conditions || '',
+    validFrom: pick(v, 'validFrom', benefit.validFrom || null),
+    validUntil: v.validUntil === undefined ? (benefit.validUntil || null) : v.validUntil,
+    validDays: pick(v, 'validDays', benefit.validDays || null),
+    blackout: pick(v, 'blackout', benefit.blackout || null),
+  }));
+}
+
+/* ---------- תוקף בתאריך ---------- */
+
+const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+function dayOnly(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str + 'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/*
+ * בודק אם תחום ההטבה תקף בתאריך מסוים. מחזיר גם סיבה מילולית,
+ * כי "לא תקף" בלי הסבר שולח את המשתמש לחפש למה.
+ */
+function activeOn(scope, date) {
+  const day = dayOnly(date);
+
+  const from = parseDate(scope.validFrom);
+  if (from && day < from) {
+    return { active: false, reason: `נכנס לתוקף ב-${formatDate(scope.validFrom)}`, kind: 'future' };
+  }
+
+  const until = parseDate(scope.validUntil);
+  if (until && day > until) {
+    return { active: false, reason: `פג תוקף ב-${formatDate(scope.validUntil)}`, kind: 'expired' };
+  }
+
+  if (scope.validDays && scope.validDays.length && !scope.validDays.includes(day.getDay())) {
+    const names = scope.validDays.map((d) => DAY_NAMES[d]).join(', ');
+    return { active: false, reason: `תקף רק בימים ${names}`, kind: 'day' };
+  }
+
+  for (const b of scope.blackout || []) {
+    const bFrom = parseDate(b.from);
+    const bTo = parseDate(b.to);
+    if (bFrom && bTo && day >= bFrom && day <= bTo) {
+      return {
+        active: false,
+        reason: `לא תקף בין ${formatDate(b.from)} ל-${formatDate(b.to)}${b.note ? ' — ' + b.note : ''}`,
+        kind: 'blackout',
+      };
+    }
+  }
+
+  return { active: true, reason: null, kind: null };
+}
+
+function expiryState(benefit, today) {
+  if (!benefit.validUntil) return { expired: false, soon: false, daysLeft: null };
+  const end = new Date(benefit.validUntil + 'T23:59:59');
+  const days = Math.ceil((end - today) / 86400000);
+  return { expired: days < 0, soon: days >= 0 && days <= 45, daysLeft: days };
+}
+
 /* ---------- חישוב חיסכון ---------- */
 
 /*
- * מחזיר { amount, label, computable } עבור הטבה בודדת בסכום נתון.
+ * מחזיר { amount, label, computable } עבור תחום הטבה בסכום נתון.
  * computable=false פירושו שאי אפשר לכמת בכסף — הטבת מידע, או נקודות
  * ששוויין לא הוגדר. במקרה כזה ההטבה עדיין מוצגת, אבל בלי מספר מדומה.
  */
-function calcSaving(benefit, amount, settings) {
-  const cap = benefit.capPerTx == null ? Infinity : benefit.capPerTx;
-  const min = benefit.minSpend || 0;
+function calcSaving(scope, amount, settings) {
+  const cap = scope.capPerTx == null ? Infinity : scope.capPerTx;
+  const min = scope.minSpend || 0;
 
   // כשחסר מעט כדי לעבור את הסף, ההפרש עצמו הוא המידע השימושי.
   if (amount < min) {
@@ -118,47 +229,35 @@ function calcSaving(benefit, amount, settings) {
     return { amount: 0, label, computable: false };
   }
 
-  switch (benefit.kind) {
+  switch (scope.kind) {
     case 'percent':
     case 'cashback': {
-      const raw = (amount * benefit.value) / 100;
+      const raw = (amount * scope.value) / 100;
       const saving = Math.min(raw, cap);
-      const capped = raw > cap;
       return {
         amount: saving,
-        label: `${benefit.value}%${capped ? ` (מוגבל ל-${formatIls(cap)})` : ''}`,
+        label: `${scope.value}%${raw > cap ? ` (מוגבל ל-${formatIls(cap)})` : ''}`,
         computable: true,
       };
     }
 
     case 'fixed':
-      return { amount: Math.min(benefit.value, cap), label: 'סכום קבוע', computable: true };
+      return { amount: Math.min(scope.value, cap), label: 'סכום קבוע', computable: true };
 
     case 'bogo': {
       // 1+1: החיסכון הוא מחיר הפריט השני, כלומר עד מחצית מהסכום.
-      const saving = Math.min(amount / 2, cap);
-      return { amount: saving, label: '1+1 (חיסכון של עד חצי)', computable: true };
+      return { amount: Math.min(amount / 2, cap), label: '1+1 (חיסכון של עד חצי)', computable: true };
     }
 
     case 'points': {
       // value = כמה שקלים נדרשים לנקודה אחת.
-      const perShekel = benefit.value;
-      const pointValue = pointValueFor(benefit, settings);
+      const perShekel = scope.value;
+      const pointValue = pointValueFor(scope, settings);
       const points = perShekel > 0 ? Math.floor(amount / perShekel) : 0;
       if (!pointValue) {
-        return {
-          amount: 0,
-          label: `${points} נקודות (שווי הנקודה לא הוגדר)`,
-          computable: false,
-          points,
-        };
+        return { amount: 0, label: `${points} נקודות (שווי הנקודה לא הוגדר)`, computable: false, points };
       }
-      return {
-        amount: points * pointValue,
-        label: `${points} נקודות × ${pointValue} ₪`,
-        computable: true,
-        points,
-      };
+      return { amount: points * pointValue, label: `${points} נקודות × ${pointValue} ₪`, computable: true, points };
     }
 
     case 'info':
@@ -168,20 +267,107 @@ function calcSaving(benefit, amount, settings) {
 }
 
 // שווי נקודה נגזר מהמנפיק. ניתן לעריכה בהגדרות כי זו הערכה, לא נתון רשמי.
-function pointValueFor(benefit, settings) {
+function pointValueFor(scope, settings) {
   const values = (settings && settings.pointValueIls) || {};
-  if (benefit.provider === 'flycard' || benefit.provider === 'elal_matmid') return values.elal || 0;
-  if (benefit.provider === 'max') return values.max_pinuk || 0;
+  if (scope.provider === 'flycard' || scope.provider === 'elal_matmid') return values.elal || 0;
+  if (scope.provider === 'max') return values.max_pinuk || 0;
+  if (scope.provider === 'dreamcard') return values.dreamcard || 0;
   return 0;
 }
 
-/* ---------- סטטוס תוקף ---------- */
+/* ---------- הערכת הטבה שלמה ---------- */
 
-function expiryState(benefit, today) {
-  if (!benefit.validUntil) return { expired: false, soon: false, daysLeft: null };
-  const end = new Date(benefit.validUntil + 'T23:59:59');
-  const days = Math.ceil((end - today) / 86400000);
-  return { expired: days < 0, soon: days >= 0 && days <= 45, daysLeft: days };
+/*
+ * מעריך הטבה בהקשר נתון (סכום, תאריך, ובחירת variant אם נעשתה).
+ *
+ * העיקרון: כשיש כמה אפשרויות ואי אפשר לדעת איזו רלוונטית, לא מנחשים.
+ * needsChoice מסמן לממשק שצריך לשאול את המשתמש לפני שנותנים תשובה.
+ */
+function evaluate(benefit, ctx) {
+  const { amount = 0, settings = {}, variantId = null } = ctx || {};
+  const date = ctx && ctx.date ? ctx.date : new Date();
+
+  const all = scopesOf(benefit);
+  const withActivity = all.map((s) => ({ scope: s, activity: activeOn(s, date) }));
+  const active = withActivity.filter((x) => x.activity.active);
+
+  // אין אף תחום תקף בתאריך הזה — מדווחים למה, במקום להחביא את ההטבה.
+  if (!active.length) {
+    const first = withActivity[0];
+    return {
+      saving: { amount: 0, label: first.activity.reason || 'לא תקף בתאריך שנבחר', computable: false },
+      needsChoice: false,
+      choices: [],
+      chosen: null,
+      active: false,
+      inactiveReason: first.activity.reason,
+      scopeCount: all.length,
+    };
+  }
+
+  const priced = active.map((x) => ({
+    id: x.scope.id,
+    label: x.scope.label,
+    conditions: x.scope.conditions,
+    scope: x.scope,
+    saving: calcSaving(x.scope, amount, settings),
+  }));
+
+  // נבחר variant מפורש
+  if (variantId != null) {
+    const chosen = priced.find((p) => p.id === variantId);
+    if (chosen) {
+      return {
+        saving: chosen.saving,
+        needsChoice: false,
+        choices: priced,
+        chosen: { id: chosen.id, label: chosen.label, conditions: chosen.conditions },
+        active: true,
+        inactiveReason: null,
+        scopeCount: all.length,
+      };
+    }
+  }
+
+  /*
+   * אפשרות אחת בלבד — אין מה לשאול, וזו תשובה ודאית ולא תקרה.
+   * זה קורה גם כשההטבה פשוטה, וגם כשהתאריך שנבחר סינן את כל שאר
+   * האפשרויות (למשל מלון שבסוף שבוע יש בו רק מסלול אחד).
+   */
+  if (priced.length === 1) {
+    const only = priced[0];
+    return {
+      saving: only.saving,
+      needsChoice: false,
+      choices: [],
+      chosen: only.scope.isBase ? null : { id: only.id, label: only.label, conditions: only.conditions },
+      active: true,
+      inactiveReason: null,
+      scopeCount: all.length,
+    };
+  }
+
+  // כמה אפשרויות: מדווחים על הטווח ומבקשים הבהרה.
+  const computable = priced.filter((p) => p.saving.computable);
+  const best = computable.slice().sort((a, b) => b.saving.amount - a.saving.amount)[0];
+  const worst = computable.slice().sort((a, b) => a.saving.amount - b.saving.amount)[0];
+
+  const rangeLabel = best && worst && best.saving.amount !== worst.saving.amount
+    ? `${formatIls(worst.saving.amount)} – ${formatIls(best.saving.amount)} תלוי במה שקונים`
+    : (best ? best.saving.label : priced[0].saving.label);
+
+  return {
+    // עד שהמשתמש יבחר, מציגים את המקסימום האפשרי ומסמנים שזו תקרה.
+    saving: best
+      ? { amount: best.saving.amount, label: rangeLabel, computable: true, isUpperBound: true }
+      : { amount: 0, label: rangeLabel, computable: false },
+    needsChoice: priced.length > 1,
+    choices: priced,
+    chosen: null,
+    active: true,
+    inactiveReason: null,
+    scopeCount: all.length,
+  };
 }
 
 /* ---------- שאילתות ---------- */
@@ -190,42 +376,87 @@ function expiryState(benefit, today) {
  * "איפה הכי כדאי" — כל ההטבות בקטגוריה, ממוינות לפי חיסכון בפועל.
  * הטבות שפג תוקפן יורדות; הטבות מידע יורדות מתחת למכומתות.
  */
-function rankByCategory(db, categoryId, amount, today) {
+function rankByCategory(db, categoryId, amount, today, opts) {
   const settings = db.settings || {};
+  const date = (opts && opts.date) || today;
+  const picks = (opts && opts.variantPicks) || {};
+
   return db.benefits
     .filter((b) => (b.categories || []).includes(categoryId))
     .map((b) => ({
       benefit: b,
-      saving: calcSaving(b, amount, settings),
+      evaluation: evaluate(b, { amount, date, settings, variantId: picks[b.id] || null }),
       expiry: expiryState(b, today),
     }))
+    .map((row) => ({ ...row, saving: row.evaluation.saving }))
     .filter((row) => !row.expiry.expired)
-    .sort((a, b) => {
-      if (a.saving.computable !== b.saving.computable) return a.saving.computable ? -1 : 1;
-      return b.saving.amount - a.saving.amount;
-    });
+    .sort(compareRows);
+}
+
+/*
+ * חיפוש בבית עסק מסוים — התשובה ל"אני קונה בפוקס ב-400 ₪".
+ * מחזיר רק הטבות שמזכירות את בית העסק במפורש.
+ */
+function searchByMerchant(db, merchantQuery, amount, today, opts) {
+  const settings = db.settings || {};
+  const date = (opts && opts.date) || today;
+  const picks = (opts && opts.variantPicks) || {};
+  const tokens = tokenize(merchantQuery);
+  if (!tokens.length) return [];
+
+  return db.benefits
+    .filter((b) => {
+      const words = wordsOf(normalize((b.merchants || []).join(' ')));
+      return words.length && tokens.some((t) => tokenMatches(t, words));
+    })
+    .map((b) => ({
+      benefit: b,
+      evaluation: evaluate(b, { amount, date, settings, variantId: picks[b.id] || null }),
+      expiry: expiryState(b, today),
+    }))
+    .map((row) => ({ ...row, saving: row.evaluation.saving }))
+    .filter((row) => !row.expiry.expired)
+    .sort(compareRows);
+}
+
+/* כל בתי העסק המוכרים למערכת, לרשימת השלמה בממשק */
+function allMerchants(db) {
+  const set = new Set();
+  for (const b of db.benefits) for (const m of b.merchants || []) set.add(m);
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'he'));
+}
+
+function compareRows(a, b) {
+  if (a.evaluation.active !== b.evaluation.active) return a.evaluation.active ? -1 : 1;
+  if (a.saving.computable !== b.saving.computable) return a.saving.computable ? -1 : 1;
+  return b.saving.amount - a.saving.amount;
 }
 
 /*
  * שאלה חופשית. מדרג לפי כמה מהמילים בשאלה נמצאו, ואיפה נמצאו —
- * התאמה לשם הרשת או לקטגוריה שווה יותר מהתאמה בתוך הערות.
+ * שם של בית עסק הוא האות החזק ביותר, ולכן מקבל את המשקל הגבוה ביותר.
  */
-function search(db, query, amount, today) {
+function search(db, query, amount, today, opts) {
   const tokens = tokenize(query);
   if (!tokens.length) return [];
 
   const settings = db.settings || {};
+  const date = (opts && opts.date) || today;
+  const picks = (opts && opts.variantPicks) || {};
   const catById = Object.fromEntries((db.categories || []).map((c) => [c.id, c]));
   const provById = Object.fromEntries((db.providers || []).map((p) => [p.id, p]));
 
   const rows = db.benefits.map((b) => {
     const provider = provById[b.provider] || { name: '' };
     const cats = (b.categories || []).map((id) => catById[id]).filter(Boolean);
+    const variantWords = (b.variants || []).map((v) => v.label || '').join(' ');
 
     // כל שדה מקבל משקל לפי כמה הוא מעיד על רלוונטיות אמיתית.
     const fields = [
+      { weight: 9, words: wordsOf(normalize((b.merchants || []).join(' '))) },
       { weight: 6, words: wordsOf(normalize(cats.map((c) => c.label + ' ' + (c.synonyms || []).join(' ')).join(' '))) },
       { weight: 5, words: wordsOf(normalize(b.title)) },
+      { weight: 5, words: wordsOf(normalize(variantWords)) },
       { weight: 4, words: wordsOf(normalize((b.tags || []).join(' '))) },
       { weight: 3, words: wordsOf(normalize(provider.name)) },
       { weight: 1, words: wordsOf(normalize(b.conditions)) },
@@ -253,34 +484,54 @@ function search(db, query, amount, today) {
     // בונוס לכיסוי: התאמה של כל מילות השאלה עדיפה על התאמה חזקה למילה אחת.
     if (hits === tokens.length && tokens.length > 1) score *= 1.5;
 
-    return { benefit: b, score, hits, saving: calcSaving(b, amount, settings), expiry: expiryState(b, today) };
+    const evaluation = evaluate(b, { amount, date, settings, variantId: picks[b.id] || null });
+    return { benefit: b, score, hits, evaluation, saving: evaluation.saving, expiry: expiryState(b, today) };
   });
 
-  return rows
+  const matched = rows
     .filter((r) => r.score > 0 && !r.expiry.expired)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      if (a.saving.computable !== b.saving.computable) return a.saving.computable ? -1 : 1;
-      return b.saving.amount - a.saving.amount;
+      return compareRows(a, b);
     });
+
+  /*
+   * חיתוך רלוונטיות. מילה בודדת שנתפסה בשדה התנאים מספיקה כדי לקבל ניקוד,
+   * ולכן שאלה על מלון החזירה גם הטבת חניה. הסף יחסי ולא מוחלט, כדי
+   * שגם שאלה שכל ההתאמות בה חלשות עדיין תחזיר את הטובות שבהן.
+   */
+  if (!matched.length) return matched;
+  const cutoff = matched[0].score * 0.2;
+  return matched.filter((r, i) => i === 0 || r.score >= cutoff);
 }
+
+/* ---------- פורמט ---------- */
 
 /*
  * תיאור מילולי של שיעור ההטבה, לשימוש כשאין סכום להשוות אליו.
  * בלי זה, עיון ללא סכום היה מציג "0 ₪" וזה נקרא כאילו אין הטבה.
  */
 function describeRate(benefit) {
-  switch (benefit.kind) {
-    case 'percent': return `${benefit.value}% הנחה`;
-    case 'cashback': return `${benefit.value}% החזר`;
-    case 'fixed': return `${formatIls(benefit.value)} הנחה`;
+  const scopes = scopesOf(benefit);
+  if (scopes.length > 1) {
+    const percents = scopes.filter((s) => s.kind === 'percent' || s.kind === 'cashback').map((s) => s.value);
+    if (percents.length > 1) {
+      const min = Math.min(...percents);
+      const max = Math.max(...percents);
+      if (min !== max) return `${min}%–${max}% לפי המוצר`;
+    }
+    return `${scopes.length} אפשרויות`;
+  }
+  const s = scopes[0];
+  switch (s.kind) {
+    case 'percent': return `${s.value}% הנחה`;
+    case 'cashback': return `${s.value}% החזר`;
+    case 'fixed': return `${formatIls(s.value)} הנחה`;
     case 'bogo': return '1+1';
-    case 'points': return `נקודה לכל ${benefit.value} ₪`;
+    case 'points': return `נקודה לכל ${s.value} ₪`;
     default: return 'מידע';
   }
 }
-
-/* ---------- פורמט ---------- */
 
 function formatIls(n) {
   if (!isFinite(n)) return '—';
@@ -288,9 +539,18 @@ function formatIls(n) {
   return rounded.toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 2 });
 }
 
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
 /* ייצוא גם ל-<script> רגיל וגם לסביבת בדיקות (Node) */
 const Engine = {
-  normalize, tokenize, calcSaving, expiryState, rankByCategory, search, formatIls, pointValueFor, describeRate,
-  wordsMatch, wordForms,
+  normalize, tokenize, wordsMatch, wordForms,
+  scopesOf, activeOn, expiryState,
+  calcSaving, evaluate, pointValueFor,
+  rankByCategory, search, searchByMerchant, allMerchants,
+  describeRate, formatIls, formatDate, DAY_NAMES,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = Engine;
