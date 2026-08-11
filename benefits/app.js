@@ -8,6 +8,9 @@
 
 const LS = {
   db: 'hatavot.db',
+  // המצב האישי נשמר בנפרד מ-db, ובכוונה: pushToGithub מסנכרן את db בלבד,
+  // והריפו ציבורי. יתרת נקודות ודרגה הם מידע אישי שאסור שיגיע לשם.
+  myStatus: 'hatavot.mystatus',
   gate: 'hatavot.gate',
   unlocked: 'hatavot.unlocked',
   sync: 'hatavot.sync',
@@ -27,6 +30,18 @@ const TODAY = new Date();
  */
 let variantPicks = {};
 let lastQuery = null;   // מאפשר להריץ מחדש את אותה שאילתה אחרי בחירה
+
+/* המצב האישי לפי מועדון — מקומי בלבד, לא מסונכרן */
+let myStatus = {};
+
+function loadMyStatus() {
+  try { myStatus = JSON.parse(localStorage.getItem(LS.myStatus) || '{}'); }
+  catch (_) { myStatus = {}; }
+}
+
+function saveMyStatus() {
+  localStorage.setItem(LS.myStatus, JSON.stringify(myStatus));
+}
 
 /* ---------- עזרים ---------- */
 
@@ -127,6 +142,7 @@ async function startApp() {
     $('#app').innerHTML = `<div class="empty">שגיאה בטעינת הנתונים: ${escapeHtml(err.message)}</div>`;
     return;
   }
+  loadMyStatus();
   buildSelects();
   bindTabs();
   bindAsk();
@@ -137,6 +153,7 @@ async function startApp() {
   renderStamp();
   renderBrowse();
   renderManageList();
+  renderMyStatus();
   receiveHashImport();
 }
 
@@ -349,6 +366,65 @@ function queryOpts(dateSelector) {
 function rerunLastQuery() {
   if (lastQuery === 'ask') runAsk(true);
   else if (lastQuery === 'compare') runCompare(true);
+}
+
+/* ---------- המצב שלי ---------- */
+
+/*
+ * כרטיס המצב האישי. מוצג רק כשיש נתונים — כרטיס ריק שמבקש לסרוק
+ * הוא רעש בכל פתיחה של האפליקציה.
+ */
+function renderMyStatus() {
+  const box = $('#my-status');
+  if (!box) return;
+
+  const ids = Object.keys(myStatus);
+  if (!ids.length) { box.innerHTML = ''; return; }
+
+  const daysSince = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso + 'T00:00:00');
+    return isNaN(d) ? null : Math.floor((TODAY - d) / 86400000);
+  };
+
+  const rows = ids.map((id) => {
+    const st = myStatus[id];
+    const bits = [];
+
+    if (st.points != null) {
+      const value = Engine.pointValueFor({ provider: id }, db.settings || {});
+      const worth = value ? ` ≈ ${Engine.formatIls(st.points * value)}` : '';
+      bits.push(`<strong>${st.points.toLocaleString('he-IL')}</strong> ${escapeHtml(st.pointsUnit || 'נקודות')}${worth}`);
+    }
+    if (st.tier) bits.push(`דרגה: <strong>${escapeHtml(st.tier)}</strong>`);
+    if (st.quotaLeft != null) {
+      bits.push(`נותרו <strong>${st.quotaLeft}</strong>${st.quotaTotal ? ` מתוך ${st.quotaTotal}` : ''}`);
+    }
+    if (st.balanceIls != null) bits.push(`יתרה: <strong>${Engine.formatIls(st.balanceIls)}</strong>`);
+
+    const age = daysSince(st.capturedAt);
+    const stale = age != null && age > 30 ? '<span class="badge unverified">כדאי לרענן</span>' : '';
+
+    return `<div class="ms-row">
+        <span class="ms-name">${escapeHtml(providerOf(id).name)}</span>
+        <span class="ms-vals">${bits.join(' · ')} ${stale}</span>
+      </div>`;
+  }).join('');
+
+  // התראה על מכסה חודשית שעומדת להתאפס — ההטבה שהכי קל לפספס
+  const daysLeftInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0).getDate() - TODAY.getDate();
+  const expiring = ids
+    .filter((id) => myStatus[id].quotaLeft > 0)
+    .map((id) => providerOf(id).name);
+  const alert = (expiring.length && daysLeftInMonth <= 10)
+    ? `<div class="ms-alert">⏰ נותרו ${daysLeftInMonth} ימים בחודש — יש לכם הטבות שלא נוצלו ב${expiring.join(', ')}. הן מתאפסות בסוף החודש.</div>`
+    : '';
+
+  box.innerHTML = `<div class="card ms-card">
+      <div class="ms-head">המצב שלי</div>
+      ${rows}
+      ${alert}
+    </div>`;
 }
 
 /* ---------- שאלה חופשית — שורה אחת כמו בצ'אט ---------- */
@@ -708,6 +784,7 @@ function saveBenefitFromForm() {
 /* ---------- ייבוא מלכידה ---------- */
 
 let capturedItems = [];
+let capturedStatus = [];
 
 /*
  * שיוך אוטומטי של מועדון לפי הדומיין שממנו נלכדו הנתונים.
@@ -753,6 +830,22 @@ function flattenCapturePayload(payload) {
     }
   }
   return flat;
+}
+
+/* המצב האישי שנקלט, לפי מועדון — נשלף בנפרד מההטבות */
+function statusFromCapturePayload(payload) {
+  const groups = Array.isArray(payload && payload.captures)
+    ? payload.captures
+    : [payload];
+
+  const out = [];
+  for (const group of groups) {
+    if (!group || !group.status || !group.status.found) continue;
+    const provider = providerForUrl(group.capturedFrom || '');
+    if (!provider) continue;
+    out.push({ provider, source: group.capturedFrom || '', status: group.status });
+  }
+  return out;
 }
 
 /*
@@ -815,6 +908,32 @@ function previewCapture() {
       </label>`;
   }).join('');
 
+  /*
+   * המצב האישי מוצג בנפרד ועם ה-evidence שממנו חולץ. בלי להראות את
+   * הטקסט המקורי, מספר שגוי נראה בדיוק כמו מספר נכון.
+   */
+  capturedStatus = statusFromCapturePayload(payload);
+  const statusBlock = capturedStatus.length ? `
+    <div class="status-capture">
+      <div class="choice-q">זוהה גם מצב אישי:</div>
+      ${capturedStatus.map((s, i) => {
+        const st = s.status;
+        const bits = [];
+        if (st.points != null) bits.push(`${st.points.toLocaleString('he-IL')} ${escapeHtml(st.pointsUnit || 'נקודות')}`);
+        if (st.tier) bits.push(`דרגה: ${escapeHtml(st.tier)}`);
+        if (st.quotaLeft != null) bits.push(`נותרו ${st.quotaLeft}${st.quotaTotal ? ' מתוך ' + st.quotaTotal : ''}`);
+        if (st.balanceIls != null) bits.push(`יתרה: ${Engine.formatIls(st.balanceIls)}`);
+        const ev = Object.values(st.evidence || {}).map((e) => escapeHtml(e)).join(' · ');
+        return `<label class="cap-row">
+            <input type="checkbox" data-status="${i}" checked>
+            <span class="cap-txt"><strong>${escapeHtml(provByIdMap[s.provider] || s.provider)}</strong> — ${bits.join(' · ')}
+              ${ev ? `<em>נמצא בטקסט: ${ev}</em>` : ''}
+            </span>
+          </label>`;
+      }).join('')}
+      <p class="hint">בדקו מול הטקסט המקורי. המצב האישי נשמר במכשיר הזה בלבד ואינו מסונכרן.</p>
+    </div>` : '';
+
   const detectedCount = items.filter((i) => i._provider).length;
   const providerNote = detectedCount === items.length
     ? 'המועדון זוהה אוטומטית לכל ההטבות לפי האתר שממנו נלכדו. הבחירה למטה תשמש רק אם תרצו לדרוס.'
@@ -826,6 +945,7 @@ function previewCapture() {
     <div class="cap-box">
       <p class="muted small">${items.length} הטבות נקלטו${source ? ' מתוך ' + escapeHtml(source) : ''}</p>
       <div class="cap-list">${rows}</div>
+      ${statusBlock}
       <p class="muted small">${escapeHtml(providerNote)}</p>
       <label for="cap-provider">מועדון (לשיוך ידני)</label>
       <select id="cap-provider">${provOptions}</select>
@@ -875,14 +995,27 @@ function addCaptured() {
     });
   });
 
+  // המצב האישי נשמר בנפרד ורק למה שאושר
+  const today2 = new Date().toISOString().slice(0, 10);
+  let statusSaved = 0;
+  $$('#cap-preview [data-status]').filter((cb) => cb.checked).forEach((cb) => {
+    const entry = capturedStatus[Number(cb.dataset.status)];
+    if (!entry) return;
+    myStatus[entry.provider] = { ...entry.status, source: entry.source, capturedAt: today2 };
+    statusSaved += 1;
+  });
+  if (statusSaved) saveMyStatus();
+
   saveDb();
   buildSelects();
   renderManageList();
   renderBrowse();
+  renderMyStatus();
   $('#cap-paste').value = '';
   $('#cap-preview').innerHTML = '';
   capturedItems = [];
-  toast(`${chosen.length} הטבות נוספו בסטטוס "לאימות"`);
+  capturedStatus = [];
+  toast(`${chosen.length} הטבות נוספו${statusSaved ? ` ומצב אישי ל-${statusSaved} מועדונים` : ''}`);
 }
 
 function deleteExamples() {

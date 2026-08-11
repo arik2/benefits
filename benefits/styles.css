@@ -452,3 +452,35 @@ input:focus, select:focus, textarea:focus {
 @media (min-width: 560px) {
   .toast { inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%); min-width: 280px; }
 }
+
+/* המצב שלי */
+.ms-card { border-inline-start: 4px solid var(--brand); }
+.ms-head { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 9px; }
+.ms-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.ms-row:last-of-type { border-bottom: none; }
+.ms-name { color: var(--ink-soft); white-space: nowrap; }
+.ms-vals { text-align: start; }
+.ms-alert {
+  margin-top: 10px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.status-capture {
+  margin: 12px 0;
+  padding: 11px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}

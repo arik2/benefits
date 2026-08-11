@@ -3,19 +3,6 @@
  * צבירה של מה שנלכד מכל אתר, ושליחה מרוכזת למערכת ההטבות.
  */
 
-/* עמודי ההטבות של המועדונים, לכפתור "פתח את כל המועדונים" */
-const CLUB_PAGES = [
-  'https://www.htzone.co.il/',
-  'https://www.dts.co.il/',
-  'https://be-plus.co.il/',
-  'https://paisplus.co.il/',
-  'https://www.max.co.il/benefits/lobby',
-  'https://www.cal-online.co.il/benefits/',
-  'https://www.mafteach.co.il/',
-  'https://www.isracard.co.il/flycard/private',
-  'https://fox.co.il/pages/dream-card-%D7%94%D7%98%D7%91%D7%95%D7%AA-%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F',
-];
-
 const $ = (s) => document.querySelector(s);
 
 function setStatus(text, isError) {
@@ -110,11 +97,96 @@ $('#scan').addEventListener('click', async () => {
   renderCaptures();
 });
 
-/* ---------- פתיחת כל המועדונים ---------- */
+/* ---------- סריקת כל המועדונים ---------- */
 
-$('#open-all').addEventListener('click', () => {
-  CLUB_PAGES.forEach((url) => chrome.tabs.create({ url, active: false }));
-  setStatus(`נפתחו ${CLUB_PAGES.length} מועדונים בטאבים. עברו ביניהם, התחברו אם צריך, ולחצו "סרוק" בכל אחד.`);
+const STATE_ICONS = {
+  pending: '⏳', scanning: '🔄', ok: '✅',
+  'needs-login': '🔑', error: '⚠️', timeout: '⏱️',
+};
+
+function renderRun(run, running) {
+  const box = $('#run');
+  if (!run || !run.sites) { box.innerHTML = ''; $('#scan-remaining').hidden = true; return; }
+
+  box.innerHTML = run.sites.map((s) => {
+    let note = '';
+    if (s.state === 'ok' && s.publicOnly) note = 'נסרק, אך לא זוהה אזור אישי';
+    else if (s.state === 'ok') {
+      const bits = [];
+      if (s.status && s.status.points != null) bits.push(`${s.status.points} ${s.status.pointsUnit || 'נקודות'}`);
+      if (s.status && s.status.tier) bits.push(s.status.tier);
+      if (s.status && s.status.quotaLeft != null) bits.push(`נותרו ${s.status.quotaLeft}`);
+      note = bits.join(' · ');
+    } else if (s.state === 'needs-login') note = 'צריך להתחבר — הטאב נשאר פתוח';
+    else if (s.state === 'timeout') note = 'האתר לא נטען בזמן';
+    else if (s.state === 'error') note = s.error || 'שגיאה';
+
+    const count = s.benefits ? `<span class="n">${s.benefits.length}</span>` : '';
+    return `<div class="site">
+        <span class="st">${STATE_ICONS[s.state] || '·'}</span>
+        <span class="st-name">${s.name || s.url}${note ? `<div class="st-note">${note}</div>` : ''}</span>
+        ${count}
+      </div>`;
+  }).join('');
+
+  if (run.done) {
+    const ok = run.sites.filter((s) => s.state === 'ok').length;
+    const login = run.sites.filter((s) => s.state === 'needs-login').length;
+    const bad = run.sites.filter((s) => ['error', 'timeout'].includes(s.state)).length;
+    const total = run.sites.reduce((n, s) => n + ((s.benefits || []).length), 0);
+    setStatus(`הסתיים: ✅ ${ok} נסרקו (${total} הטבות) · 🔑 ${login} דורשים התחברות · ⚠️ ${bad} נכשלו`);
+    $('#scan-remaining').hidden = !(login + bad);
+  } else if (running) {
+    const cur = run.sites[run.currentIndex];
+    setStatus(`סורק ${run.currentIndex + 1} מתוך ${run.sites.length}: ${cur ? cur.name || cur.url : ''}…`);
+    $('#scan-remaining').hidden = true;
+  }
+}
+
+/*
+ * הריצה חיה ב-service worker, ולכן החלונית רק דוגמת את המצב.
+ * זה גם מה שמאפשר לסגור את החלונית באמצע בלי לעצור את הסריקה.
+ */
+let pollTimer = null;
+function startPolling() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    const res = await chrome.runtime.sendMessage({ type: 'get-run' });
+    if (!res || !res.ok) return;
+    renderRun(res.run, res.running);
+    if (res.run && res.run.done && !res.running) {
+      clearInterval(pollTimer);
+      await mergeRunIntoCaptures(res.run);
+      renderCaptures();
+    }
+  }, 500);
+}
+
+/* מזרים את תוצאות הריצה לאותו אחסון שממנו נשלחים הנתונים למערכת */
+async function mergeRunIntoCaptures(run) {
+  const { captures } = await getStore();
+  for (const site of run.sites) {
+    if (site.state !== 'ok') continue;
+    captures[hostOf(site.capturedFrom || site.url)] = {
+      capturedFrom: site.capturedFrom || site.url,
+      capturedAt: new Date().toISOString().slice(0, 10),
+      items: site.benefits || [],
+      status: site.status || null,
+    };
+  }
+  await chrome.storage.local.set({ captures });
+}
+
+$('#scan-all').addEventListener('click', () => {
+  setStatus('מתחיל סריקה… אפשר לסגור את החלונית, הסריקה ממשיכה ברקע');
+  chrome.runtime.sendMessage({ type: 'scan-all' });
+  startPolling();
+});
+
+$('#scan-remaining').addEventListener('click', () => {
+  setStatus('סורק מחדש את מה שנותר…');
+  chrome.runtime.sendMessage({ type: 'scan-remaining' });
+  startPolling();
 });
 
 /* ---------- שליחה למערכת ---------- */
@@ -160,4 +232,11 @@ $('#app-url').addEventListener('change', async () => {
   const { appUrl } = await getStore();
   $('#app-url').value = appUrl;
   renderCaptures();
+
+  // אם סריקה רצה ברקע או הסתיימה בזמן שהחלונית הייתה סגורה — להציג אותה
+  const res = await chrome.runtime.sendMessage({ type: 'get-run' });
+  if (res && res.ok && res.run) {
+    renderRun(res.run, res.running);
+    if (res.running) startPolling();
+  }
 })();

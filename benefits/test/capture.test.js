@@ -83,6 +83,32 @@ check('כפילויות מוסרות', deduped.length === 2, deduped.length + ' 
 check('נשמרת הגרסה עם יותר הקשר',
   deduped.find((d) => d.value === 20).rawText === 'טקסט ארוך יותר עם הקשר');
 
+/* --- המצב האישי --- */
+
+const pts = (t) => JSON.stringify(C.parsePoints(t));
+
+check('יתרת נקודות', pts('יתרת הנקודות שלך: 1,240') === '{"points":1240,"unit":"נקודות"}');
+check('"צברת" נחשב שיוך', pts('צברת 1,240 נקודות') === '{"points":1240,"unit":"נקודות"}');
+check('יהלומים מזוהים כיחידה', pts('יתרה: 8,300 יהלומים') === '{"points":8300,"unit":"יהלומים"}');
+
+// הסכנה המרכזית: טקסט שיווקי שנראה כמו יתרה
+check('רגרסיה: "צברו עד 1,000 נקודות!" נדחה', C.parsePoints('צברו עד 1,000 נקודות!') === null);
+check('רגרסיה: מספר בלי מילת שיוך נדחה', C.parsePoints('1,000 נקודות במתנה') === null);
+check('רגרסיה: "קבלו 500 נקודות" נדחה', C.parsePoints('קבלו 500 נקודות') === null);
+
+check('דרגה מרשימה מוכרת', C.parseTier('מעמד: זהב') === 'זהב');
+check('דרגה דו-מילית גוברת על חד-מילית', C.parseTier('דרגה זהב פלוס') === 'זהב פלוס');
+check('אות סופית לא שוברת שיוך ("שלך")', C.parseTier('חבר כסופה שלך') === 'כסופה');
+check('רגרסיה: דרגה לא מוכרת נדחית', C.parseTier('מעמד: בלהבלה') === null);
+check('רגרסיה: דרגה בלי מילת שיוך נדחית', C.parseTier('מבצעי זהב') === null);
+
+check('מכסה "נותרו"', JSON.stringify(C.parseQuota('נותרו לך 3 הטבות')) === '{"left":3,"total":null}');
+check('מכסה "X מתוך Y"', JSON.stringify(C.parseQuota('מימשת 2 מתוך 5')) === '{"left":2,"total":5}');
+check('רגרסיה: מספר הטבות בלי שיוך נדחה', C.parseQuota('5 הטבות חדשות') === null);
+
+check('יתרת חיסכון בשקלים', C.parseBalance('החיסכון שלך: 234 ₪') === 234);
+check('רגרסיה: "חסכו עד 500 ₪" נדחה', C.parseBalance('חסכו עד 500 ₪') === null);
+
 /* --- סריקת DOM --- */
 
 let JSDOM = null;
@@ -136,6 +162,49 @@ if (!JSDOM) {
   // ההורה מכיל את אותו טקסט של הילד — לא רוצים את שניהם
   check('לא נלכדים גם ההורה וגם הילד עם אותו ערך',
     found.filter((f) => f.kind === 'percent' && f.value === 20).length === 1);
+
+  // --- סריקת מצב אישי מתוך DOM ---
+  const statusHtml = `
+    <html><body>
+      <header>
+        <span>שלום אריק</span>
+        <div class="bal">יתרת הנקודות שלך: 1,240</div>
+        <div class="tier">מעמד: זהב</div>
+      </header>
+      <main>
+        <p>נותרו לך 3 הטבות החודש</p>
+        <div class="promo">הצטרפו עכשיו וצברו עד 5,000 נקודות!</div>
+      </main>
+    </body></html>`;
+
+  const statusDom = new JSDOM(statusHtml, { pretendToBeVisual: true });
+  global.window = statusDom.window;
+  const st = C.scanStatus(statusDom.window.document);
+
+  check('נסרקה יתרת נקודות מהעמוד', st.points === 1240, String(st.points));
+  check('נסרקה דרגה מהעמוד', st.tier === 'זהב', st.tier);
+  check('נסרקה מכסה שנותרה', st.quotaLeft === 3, String(st.quotaLeft));
+  check('found מסומן', st.found === true);
+  check('נשמר evidence לכל שדה',
+    !!(st.evidence.points && st.evidence.tier && st.evidence.quota),
+    JSON.stringify(st.evidence));
+  check('רגרסיה: הבאנר השיווקי (5,000) לא נלקח כיתרה', st.points !== 5000);
+
+  // עמוד בלי מצב אישי
+  const plainDom = new JSDOM('<html><body><p>20% הנחה בפוקס</p></body></html>', { pretendToBeVisual: true });
+  global.window = plainDom.window;
+  check('עמוד בלי מצב אישי מחזיר found=false',
+    C.scanStatus(plainDom.window.document).found === false);
+
+  // --- זיהוי "לא מחובר" ---
+  const lockedDom = new JSDOM('<html><body><form><input type="password"></form></body></html>', { pretendToBeVisual: true });
+  global.window = lockedDom.window;
+  check('שדה סיסמה גלוי מסמן לא-מחובר',
+    C.looksLoggedOut(lockedDom.window.document, 'https://x.co.il/') === true);
+  check('כתובת התחברות מסמנת לא-מחובר',
+    C.looksLoggedOut(plainDom.window.document, 'https://x.co.il/login') === true);
+  check('עמוד רגיל אינו מסומן לא-מחובר',
+    C.looksLoggedOut(plainDom.window.document, 'https://x.co.il/benefits') === false);
 
   delete global.window;
 }

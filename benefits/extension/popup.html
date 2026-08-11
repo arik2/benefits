@@ -57,6 +57,10 @@
       direction: ltr;
     }
     .empty { color: #94a3b8; font-size: 12px; text-align: center; padding: 8px 0; }
+    .st { font-size: 15px; width: 20px; text-align: center; }
+    .st-name { flex: 1; }
+    .st-note { font-size: 11px; color: #94a3b8; }
+    .summary { font-size: 12px; color: #334155; padding: 8px 0 2px; font-weight: 600; }
     .foot { font-size: 11px; color: #94a3b8; margin-top: 10px; line-height: 1.5; }
   </style>
 </head>
@@ -64,10 +68,12 @@
   <h1>📥 לכידת הטבות</h1>
   <p class="sub">קורא בלבד. שום פעולה לא מתבצעת בחשבונות.</p>
 
-  <button class="primary" id="scan">סרוק את העמוד הנוכחי</button>
-  <button id="open-all">פתח את כל המועדונים</button>
+  <button class="primary" id="scan-all">🔄 סרוק את כל המועדונים</button>
+  <button id="scan">סרוק רק את העמוד הנוכחי</button>
+  <button id="scan-remaining" hidden>המשך — סרוק את מה שנותר</button>
   <div class="status" id="status"></div>
 
+  <div class="list" id="run"></div>
   <div class="list" id="captures"></div>
 
   <button class="primary" id="send" style="margin-top:10px;">שלח למערכת</button>

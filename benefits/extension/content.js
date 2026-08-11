@@ -30,13 +30,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
       await autoScroll();
-      const items = window.BenefitCapture.scanDocument(document);
+      const cap = window.BenefitCapture;
+      const items = cap.scanDocument(document);
+      const status = cap.scanStatus(document);
+      const loggedOut = cap.looksLoggedOut(document, location.href);
+
       chrome.runtime.sendMessage({ type: 'captured-count', count: items.length });
       sendResponse({
         ok: true,
         capturedFrom: location.href,
         pageTitle: document.title,
         items,
+        status,
+        loggedOut,
       });
     } catch (err) {
       sendResponse({ ok: false, error: err.message });

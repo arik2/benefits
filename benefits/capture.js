@@ -119,6 +119,160 @@
     };
   }
 
+  /* ---------- המצב האישי ---------- */
+
+  /*
+   * חילוץ המצב האישי: יתרת נקודות, דרגה, מכסה חודשית שנותרה ויתרת חיסכון.
+   *
+   * הסכנה כאן שונה מזו שבהטבות. אתרי מועדונים מלאים בטקסט שיווקי כמו
+   * "צברו עד 1,000 נקודות!" — מספר לבדו אינו מצב אישי. לכן כל ערך נספר
+   * רק אם באותה יחידת טקסט מופיעה גם מילת שיוך ("יתרה", "צברת", "שלך").
+   * עדיף להחמיץ מצב מאשר להמציא אותו: מספר שגוי כאן נראה בדיוק כמו נכון.
+   */
+  /*
+   * הרשימה נבנית דרך norm כדי שתתאים לטקסט המנורמל. אחרת "שלך" ברשימה
+   * לעולם לא יתאים ל"שלכ" שבטקסט, והבדיקה תיכשל בשקט.
+   */
+  const OWNERSHIP_WORDS = new RegExp(
+    ['יתרת', 'יתרה', 'צברת', 'צברתם', 'שלי', 'שלך', 'שלכם', 'נותרו', 'נותר',
+     'נשארו', 'ברשותך', 'ברשותכם', 'הצטברו', 'מעמד', 'דרגה', 'סטטוס',
+     'חשבונך', 'מימשת', 'לרשותך'].map(norm).join('|')
+  );
+
+  function hasOwnership(text) {
+    return OWNERSHIP_WORDS.test(norm(text));
+  }
+
+  /* מילים שמסגירות הבטחה שיווקית ולא יתרה בפועל */
+  const PROMO_WORDS = /\bעד\b|קבלו|צברו|הצטרפו|כדאי|מבצע|חדש/;
+
+  function parseNumber(raw) {
+    const n = parseFloat(String(raw).replace(/,/g, ''));
+    return isFinite(n) ? n : null;
+  }
+
+  /* יתרת נקודות או יהלומים */
+  function parsePoints(rawText) {
+    const text = norm(rawText);
+    if (!text || !hasOwnership(text)) return null;
+
+    // "עד 1,000 נקודות" הוא הבטחה, לא יתרה
+    const unitWord = /יהלומ/.test(text) ? 'יהלומים' : 'נקודות';
+    const m = text.match(/(\d[\d,]*)\s*(?:נקודות|נקודה|יהלומימ|יהלומ)/)
+      || text.match(/(?:נקודות|יהלומימ)\D{0,12}?(\d[\d,]*)/);
+    if (!m) return null;
+    if (PROMO_WORDS.test(text.slice(Math.max(0, text.indexOf(m[1]) - 18), text.indexOf(m[1])))) return null;
+
+    const value = parseNumber(m[1]);
+    return value == null || value < 0 ? null : { points: value, unit: unitWord };
+  }
+
+  /* דרגה או מעמד — רק מתוך רשימה מוכרת, אחרת ניתפס על כל מילה שאחרי "מעמד" */
+  const KNOWN_TIERS = [
+    'זהב פלוס', 'טופ פלטינה', 'פלטינום', 'פלטינה', 'כסופה', 'זהב', 'כסף', 'ברונזה',
+    'בסיסי', 'PRO', 'VIP', 'פרימיום',
+  ];
+
+  function parseTier(rawText) {
+    const text = norm(rawText);
+    if (!text || !hasOwnership(text)) return null;
+    // הרשימה ממוינת מהארוך לקצר, כך ש"זהב פלוס" גובר על "זהב"
+    for (const tier of KNOWN_TIERS) {
+      const t = norm(tier);
+      if (new RegExp('(^|\\s)' + t + '($|\\s)').test(text)) return tier;
+    }
+    return null;
+  }
+
+  /* מכסה חודשית: "נותרו לך 3 הטבות", "3 מתוך 5" */
+  function parseQuota(rawText) {
+    const text = norm(rawText);
+    if (!text) return null;
+
+    const outOf = text.match(/(\d+)\s*(?:מתוכ|מ־|\/)\s*(\d+)/);
+    if (outOf) {
+      const left = parseNumber(outOf[1]);
+      const total = parseNumber(outOf[2]);
+      if (left != null && total != null && left <= total) return { left, total };
+    }
+
+    if (!hasOwnership(text)) return null;
+    const left = text.match(/(?:נותרו|נותר|נשארו|יתרה)\D{0,14}?(\d+)/);
+    if (left) {
+      const value = parseNumber(left[1]);
+      if (value != null) return { left: value, total: null };
+    }
+    return null;
+  }
+
+  /* יתרת חיסכון בשקלים — למשל חיסכון מפתח דיסקונט */
+  function parseBalance(rawText) {
+    const text = norm(rawText);
+    if (!text || !hasOwnership(text)) return null;
+    const m = text.match(/(\d[\d,]*(?:\.\d+)?)\s*(?:₪|ש"?ח|שח)/);
+    if (!m) return null;
+    if (PROMO_WORDS.test(text.slice(0, text.indexOf(m[1])))) return null;
+    const value = parseNumber(m[1]);
+    return value == null || value <= 0 ? null : value;
+  }
+
+  /*
+   * סורק את העמוד ומחזיר את המצב האישי.
+   * לכל שדה נשמר גם הטקסט שממנו הוא חולץ (evidence), כדי שהמשתמש יראה
+   * על מה המערכת הסתמכה ויוכל לפסול טעות לפני ששומרים.
+   */
+  function scanStatus(doc) {
+    const result = { points: null, pointsUnit: null, tier: null, quotaLeft: null, quotaTotal: null, balanceIls: null, evidence: {} };
+    const nodes = doc.querySelectorAll('li, p, span, div, td, h1, h2, h3, h4, strong, b');
+
+    for (const el of nodes) {
+      if (SKIP_TAGS.has(el.tagName)) continue;
+      const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+      // יחידות טקסט קצרות בלבד: בלוק גדול גורר מספרים מכל העמוד
+      if (!text || text.length < 4 || text.length > 120) continue;
+      if (!isVisible(el)) continue;
+
+      if (result.points == null) {
+        const p = parsePoints(text);
+        if (p) {
+          result.points = p.points;
+          result.pointsUnit = p.unit;
+          result.evidence.points = cleanTitle(text, 120);
+        }
+      }
+      if (result.tier == null) {
+        const t = parseTier(text);
+        if (t) { result.tier = t; result.evidence.tier = cleanTitle(text, 120); }
+      }
+      if (result.quotaLeft == null) {
+        const q = parseQuota(text);
+        if (q) {
+          result.quotaLeft = q.left;
+          result.quotaTotal = q.total;
+          result.evidence.quota = cleanTitle(text, 120);
+        }
+      }
+      if (result.balanceIls == null) {
+        const b = parseBalance(text);
+        if (b) { result.balanceIls = b; result.evidence.balance = cleanTitle(text, 120); }
+      }
+    }
+
+    result.found = result.points != null || result.tier != null
+      || result.quotaLeft != null || result.balanceIls != null;
+    return result;
+  }
+
+  /*
+   * סימני "לא מחובר". שדה סיסמה גלוי או כתובת התחברות הם ודאיים;
+   * שאר הסימנים חלשים מדי כדי להכריע לבדם.
+   */
+  function looksLoggedOut(doc, url) {
+    const pw = doc.querySelector('input[type="password"]');
+    if (pw && isVisible(pw)) return true;
+    return /login|signin|sign-in|identify|כניסה|הזדהות/i.test(String(url || ''));
+  }
+
   /*
    * מסיר כפילויות. אותה הטבה מופיעה בעמוד כמה פעמים (כרטיס, רשימה,
    * חלונית) ובלי זה הרשימה מתמלאת חזרות.
@@ -323,6 +477,7 @@
   const api = {
     parseValue, parseMinSpend, parseCap, parseValidUntil,
     cleanTitle, buildCandidate, dedupe, scanDocument, findMerchant, isVisible, run,
+    parsePoints, parseTier, parseQuota, parseBalance, scanStatus, looksLoggedOut,
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

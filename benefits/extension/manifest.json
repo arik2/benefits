@@ -10,7 +10,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "tabs", "clipboardWrite"],
+  "permissions": ["storage", "tabs", "clipboardWrite", "scripting"],
   "content_scripts": [
     {
       "matches": [
