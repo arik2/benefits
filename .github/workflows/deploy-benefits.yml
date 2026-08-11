@@ -1,4 +1,4 @@
-# מעלה את מערכת ההטבות ל-GitHub Pages בכל דחיפה לענף הפיתוח.
+# מעלה את מערכת ההטבות ל-GitHub Pages בכל דחיפה.
 #
 # ההעלאה נעשית בדחיפת תוכן תיקיית benefits לענף gh-pages — המסלול
 # שג'יטהאב מפעיל ממנו Pages אוטומטית. המסלול הישיר (actions/deploy-pages)
@@ -7,7 +7,9 @@ name: Deploy benefits to Pages
 
 on:
   push:
-    branches: [claude/credit-card-benefits-system-tch69c]
+    branches:
+      - master
+      - claude/credit-card-benefits-system-tch69c
   workflow_dispatch:
 
 permissions:
@@ -25,6 +27,27 @@ jobs:
 
       - name: Run tests
         run: node benefits/test/engine.test.js && node benefits/test/capture.test.js
+
+      # extension/capture.js הוא עותק מיוצר של benefits/capture.js.
+      # אם מישהו עדכן את המקור ולא הריץ build.js, עדיף שהפריסה תיעצר
+      # מאשר שיפורסם תוסף עם סורק ישן שאיש לא ישים לב אליו.
+      - name: Verify extension build is current
+        run: |
+          node benefits/extension/build.js
+          git diff --exit-code -- benefits/extension/capture.js \
+            || (echo "::error::extension/capture.js אינו מעודכן. הריצו: node benefits/extension/build.js" && exit 1)
+
+      # ה-ZIP נבנה בכל פריסה ואינו נשמר במאגר, כדי שלא יוכל להתיישן בשקט.
+      # הקבצים נארזים בתוך תיקייה אחת כדי שהחילוץ ייתן תיקייה נקייה
+      # שאפשר לבחור ישירות ב"טעינת תוסף לא ארוז".
+      - name: Package extension
+        run: |
+          mkdir -p _pkg/hatavot-extension
+          cp benefits/extension/manifest.json _pkg/hatavot-extension/
+          cp benefits/extension/*.js benefits/extension/*.html _pkg/hatavot-extension/
+          rm -f _pkg/hatavot-extension/build.js   # כלי פיתוח, לא חלק מהתוסף
+          (cd _pkg && zip -qr ../benefits/extension.zip hatavot-extension)
+          unzip -l benefits/extension.zip
 
       - name: Publish benefits/ to gh-pages
         run: |
