@@ -1,0 +1,13 @@
+{
+  "id": "discount_bank",
+  "provider": "discount_bank",
+  "name": "בנק דיסקונט",
+  "requiresLogin": false,
+  "loginUrl": "https://www.discountbank.co.il/",
+  "pages": [
+    { "url": "https://www.discountbank.co.il/", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "הטבות הבנק בלבד, מהעמוד הציבורי. המערכת אינה מתחברת לחשבון - זו הייתה בקשה מפורשת."
+}

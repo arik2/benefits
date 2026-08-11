@@ -1,0 +1,14 @@
+{
+  "id": "elal_matmid",
+  "provider": "elal_matmid",
+  "name": "אל על - הנוסע המתמיד",
+  "requiresLogin": true,
+  "loginUrl": "https://www.elal.com/he/PassengersInfo/Frequent-Flyer/Pages/default.aspx",
+  "pages": [
+    { "url": "https://www.elal.com/he/PassengersInfo/Frequent-Flyer/Pages/default.aspx", "kind": "status" }
+  ],
+  "userEnv": "ELAL_USER",
+  "secretEnv": "ELAL_PASSWORD",
+  "selectors": {},
+  "notes": "העיקר כאן הוא יתרת הנקודות והדרגה, לא קטלוג הטבות. שווי נקודה מוגדר ב-settings."
+}

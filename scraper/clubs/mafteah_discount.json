@@ -1,0 +1,13 @@
+{
+  "id": "mafteah_discount",
+  "provider": "mafteah_discount",
+  "name": "מפתח דיסקונט",
+  "requiresLogin": false,
+  "loginUrl": "https://www.mafteach.co.il/",
+  "pages": [
+    { "url": "https://www.mafteach.co.il/", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "קטלוג ההטבות ציבורי. אין התחברות - אריק ביקש שהמערכת לא תיגע בחשבון הבנק."
+}

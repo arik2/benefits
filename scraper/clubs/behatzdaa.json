@@ -1,0 +1,14 @@
+{
+  "id": "behatzdaa",
+  "provider": "behatzdaa",
+  "name": "בהצדעה",
+  "requiresLogin": true,
+  "loginUrl": "https://www.dts.co.il/",
+  "pages": [
+    { "url": "https://www.dts.co.il/", "kind": "benefits" }
+  ],
+  "userEnv": "BEHATZDAA_USER",
+  "secretEnv": "BEHATZDAA_PASSWORD",
+  "selectors": {},
+  "notes": "מועדון המשתחררים. הכרטיס מונפק על ידי מקס, וייתכן שההטבות האישיות מופיעות דווקא שם."
+}

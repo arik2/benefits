@@ -1,0 +1,13 @@
+{
+  "id": "discount_green_wallet",
+  "provider": "discount_green_wallet",
+  "name": "הארנק הירוק",
+  "requiresLogin": false,
+  "loginUrl": "https://www.discountbank.co.il/",
+  "pages": [
+    { "url": "https://www.discountbank.co.il/", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "קטלוג ציבורי בלבד. אין התחברות לחשבון הבנק."
+}

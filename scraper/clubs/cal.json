@@ -1,0 +1,14 @@
+{
+  "id": "cal",
+  "provider": "cal",
+  "name": "כאל",
+  "requiresLogin": true,
+  "loginUrl": "https://www.cal-online.co.il/",
+  "pages": [
+    { "url": "https://www.cal-online.co.il/benefits/", "kind": "benefits" }
+  ],
+  "userEnv": "CAL_USER",
+  "secretEnv": "CAL_PASSWORD",
+  "selectors": {},
+  "notes": ""
+}

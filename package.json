@@ -1,0 +1,16 @@
+{
+  "name": "hatavot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "מערכת הטבות פרטית: בוט טלגרם, מנוע חיפוש וסורק מועדונים",
+  "scripts": {
+    "test": "node benefits/test/engine.test.js && node benefits/test/capture.test.js && node test/mask.test.js && node test/bot.test.js && node test/scraper.test.js",
+    "test:unit": "node benefits/test/engine.test.js && node benefits/test/capture.test.js && node test/mask.test.js && node test/bot.test.js",
+    "build": "node benefits/extension/build.js && node supabase/functions/bot/build.js",
+    "scrape": "node scraper/run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "playwright": "^1.62.1"
+  }
+}

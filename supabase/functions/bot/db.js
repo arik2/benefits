@@ -90,6 +90,8 @@ function createLocalDb({ seed, statePath, fs, now } = {}) {
     otp: [],
     lastQuery: {},
     scrapeRequests: [],
+    sessions: {},
+    runs: [],
   };
 
   if (statePath && fs && fs.existsSync(statePath)) {
@@ -171,8 +173,27 @@ function createLocalDb({ seed, statePath, fs, now } = {}) {
       save();
     },
 
+    async expireOtp(id) {
+      const req = state.otp.find((o) => o.id === id);
+      if (req) { req.status = 'expired'; save(); }
+    },
+
     async requestScrape() {
       state.scrapeRequests.push(clock().toISOString());
+      save();
+    },
+
+    async loadSession(club) {
+      return state.sessions[club] || null;
+    },
+
+    async saveSession(club, cookies, expiresAt) {
+      state.sessions[club] = { club, cookies, expires_at: expiresAt };
+      save();
+    },
+
+    async recordRun(results, ok) {
+      state.runs.push({ results, ok, finished_at: clock().toISOString() });
       save();
     },
   };
@@ -302,6 +323,13 @@ function createSupabaseDb({ url, key, fetch: doFetch, dispatch, seed, now } = {}
       });
     },
 
+    async expireOtp(id) {
+      await rest(`/otp_requests?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'expired' }),
+      });
+    },
+
     /*
      * ההפעלה עצמה אינה של Supabase אלא של GitHub, ולכן היא מוזרקת.
      * בלי dispatch הבוט לא נשבר — הוא פשוט לא מפעיל סריקה, וזה מה
@@ -310,6 +338,28 @@ function createSupabaseDb({ url, key, fetch: doFetch, dispatch, seed, now } = {}
     async requestScrape() {
       if (!dispatch) throw new Error('לא הוגדרה הפעלת סריקה');
       await dispatch();
+    },
+
+    async loadSession(club) {
+      const rows = await rest(`/sessions?club=eq.${encodeURIComponent(club)}&select=*`);
+      return (rows && rows[0]) || null;
+    },
+
+    async saveSession(club, cookies, expiresAt) {
+      await rest('/sessions', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          club, cookies, expires_at: expiresAt, updated_at: clock().toISOString(),
+        }),
+      });
+    },
+
+    async recordRun(results, ok) {
+      await rest('/scrape_runs', {
+        method: 'POST',
+        body: JSON.stringify({ results, ok, finished_at: clock().toISOString() }),
+      });
     },
   };
 }

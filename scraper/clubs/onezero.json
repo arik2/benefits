@@ -1,0 +1,13 @@
+{
+  "id": "onezero",
+  "provider": "onezero",
+  "name": "ONE ZERO",
+  "requiresLogin": false,
+  "loginUrl": "https://www.onezerobank.com/",
+  "pages": [
+    { "url": "https://www.onezerobank.com/", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "קטלוג ציבורי בלבד. אין התחברות לחשבון."
+}

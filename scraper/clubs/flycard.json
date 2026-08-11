@@ -1,0 +1,14 @@
+{
+  "id": "flycard",
+  "provider": "flycard",
+  "name": "פליי קארד",
+  "requiresLogin": true,
+  "loginUrl": "https://www.isracard.co.il/",
+  "pages": [
+    { "url": "https://www.isracard.co.il/flycard/private", "kind": "benefits" }
+  ],
+  "userEnv": "FLYCARD_USER",
+  "secretEnv": "FLYCARD_PASSWORD",
+  "selectors": {},
+  "notes": "מונפק על ידי ישראכרט. צבירת נקודות לאל על."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "dreamcard",
+  "provider": "dreamcard",
+  "name": "דרים קארד",
+  "requiresLogin": false,
+  "loginUrl": "https://fox.co.il/pages/dream-card",
+  "pages": [
+    { "url": "https://fox.co.il/pages/dream-card", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "מועדון פוקס. הקטלוג ציבורי."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "pais",
+  "provider": "pais",
+  "name": "מפעל הפיס",
+  "requiresLogin": true,
+  "loginUrl": "https://paisplus.co.il/",
+  "pages": [
+    { "url": "https://paisplus.co.il/", "kind": "benefits" }
+  ],
+  "userEnv": "PAIS_USER",
+  "secretEnv": "PAIS_PASSWORD",
+  "selectors": {},
+  "notes": "פיס פלוס. הדרגה (כסף/זהב/זהב פלוס/פלטינום) נקראת דרך scanStatus."
+}

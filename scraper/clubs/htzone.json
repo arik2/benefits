@@ -1,0 +1,14 @@
+{
+  "id": "htzone",
+  "provider": "htzone",
+  "name": "הייטקזון",
+  "requiresLogin": true,
+  "loginUrl": "https://www.htzone.co.il/",
+  "pages": [
+    { "url": "https://www.htzone.co.il/", "kind": "benefits" }
+  ],
+  "userEnv": "HTZONE_USER",
+  "secretEnv": "HTZONE_PASSWORD",
+  "selectors": {},
+  "notes": ""
+}

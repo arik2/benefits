@@ -1,0 +1,14 @@
+{
+  "id": "max",
+  "provider": "max",
+  "name": "מקס",
+  "requiresLogin": true,
+  "loginUrl": "https://www.max.co.il/login",
+  "pages": [
+    { "url": "https://www.max.co.il/benefits/lobby", "kind": "benefits" }
+  ],
+  "userEnv": "MAX_USER",
+  "secretEnv": "MAX_PASSWORD",
+  "selectors": {},
+  "notes": "נקודות פינוק. שוויין מוגדר 0 ב-settings עד שאריק יקבע שער."
+}

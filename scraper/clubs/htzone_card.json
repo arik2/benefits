@@ -1,0 +1,13 @@
+{
+  "id": "htzone_card",
+  "provider": "htzone_card",
+  "name": "כרטיס הייטקזון",
+  "requiresLogin": false,
+  "loginUrl": "https://www.htzone.co.il/",
+  "pages": [
+    { "url": "https://www.htzone.co.il/", "kind": "benefits" }
+  ],
+  "secretEnv": null,
+  "selectors": {},
+  "notes": "הטבות הכרטיס מפורסמות באתר המועדון. אין צורך בהתחברות נפרדת."
+}
