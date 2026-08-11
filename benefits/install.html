@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>התקנת התוסף — ההטבות שלנו</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+  <style>
+    .dl {
+      display: block;
+      background: var(--brand);
+      color: var(--brand-ink);
+      padding: 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 18px;
+      text-decoration: none;
+      text-align: center;
+      margin: 6px 0;
+    }
+    ol.steps { padding-inline-start: 22px; margin: 0; }
+    ol.steps li { margin-bottom: 14px; }
+    code.inline {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 14px;
+      direction: ltr;
+      display: inline-block;
+    }
+    .copyrow { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+    .copyrow input { direction: ltr; font-size: 14px; }
+    .copyrow button { flex: 0 0 auto; width: auto; }
+    .yes-no { list-style: none; padding: 0; margin: 8px 0 0; }
+    .yes-no li { margin-bottom: 7px; font-size: 14px; display: flex; gap: 8px; }
+    .yes-no .mark { flex: 0 0 auto; font-weight: 700; }
+    .yes { color: var(--good); }
+    .no { color: var(--bad); }
+    .perm { font-size: 13px; color: var(--ink-soft); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🧩 התקנת התוסף</h1>
+</header>
+
+<main>
+
+  <!-- תוספי כרום לא קיימים בנייד. בלי האזהרה הזו המשתמש יוריד ZIP לטלפון ויתקע. -->
+  <div class="card" id="mobile-warning" hidden>
+    <h2>⚠️ צריך מחשב</h2>
+    <p class="muted">
+      תוספי כרום לא עובדים בטלפון — לא באנדרואיד ולא באייפון. זו מגבלה של
+      הדפדפן, לא של התוסף.
+    </p>
+    <p class="muted">פתחו את הדף הזה במחשב:</p>
+    <div class="copyrow">
+      <input type="text" id="page-url" readonly>
+      <button class="btn" id="copy-url">העתק</button>
+    </div>
+    <p class="muted small">
+      את <strong>האתר עצמו</strong> אפשר להמשיך להשתמש מהנייד כרגיל.
+      רק איסוף ההטבות הוא משימת מחשב.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>1. הורדה</h2>
+    <a class="dl" href="extension.zip" download>⬇️ הורדת התוסף</a>
+    <p class="muted small">קובץ ZIP קטן. אין צורך בחשבון GitHub.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. התקנה בכרום</h2>
+    <ol class="steps">
+      <li>
+        <strong>חלצו את הקובץ</strong> שהורדתם (לחיצה ימנית ← "חלץ הכל").
+        תיווצר תיקייה בשם <code class="inline">hatavot-extension</code>.
+      </li>
+      <li>
+        בכרום, הדביקו בשורת הכתובת:
+        <div class="copyrow">
+          <input type="text" value="chrome://extensions" readonly id="ext-url">
+          <button class="btn" id="copy-ext">העתק</button>
+        </div>
+        <p class="muted small">לחיצה על קישור כזה לא עובדת — חייבים להדביק.</p>
+      </li>
+      <li>הפעילו למעלה מימין את <strong>"מצב מפתחים"</strong>.</li>
+      <li>לחצו <strong>"טעינת תוסף לא ארוז"</strong> (Load unpacked).</li>
+      <li>
+        בחרו את התיקייה <code class="inline">hatavot-extension</code> —
+        זו שיש בתוכה קובץ בשם <code class="inline">manifest.json</code>.
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>3. חיבור למערכת</h2>
+    <p class="muted">
+      לחצו על סמל התוסף בכרום, ובשדה התחתון <strong>"כתובת המערכת"</strong>
+      הדביקו:
+    </p>
+    <div class="copyrow">
+      <input type="text" id="app-url" readonly>
+      <button class="btn" id="copy-app">העתק</button>
+    </div>
+    <p class="muted small">פעם אחת בלבד. מכאן "שלח למערכת" יפתח את האתר ישירות.</p>
+  </div>
+
+  <div class="card">
+    <h2>4. שימוש</h2>
+    <p class="muted">
+      לחצו <strong>"🔄 סרוק את כל המועדונים"</strong>. התוסף פותח כל מועדון
+      ברקע, גולל, סורק וסוגר. אפשר לסגור את החלונית — הסריקה ממשיכה.
+    </p>
+    <p class="muted">
+      בסוף יוצג סיכום. <strong>מועדון שדורש התחברות מסומן 🔑 והטאב שלו
+      נשאר פתוח</strong> — היכנסו עם הקוד לנייד, ולחצו "המשך" שסורק רק אותו.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>מה התוסף עושה — ומה לא</h2>
+    <ul class="yes-no">
+      <li><span class="mark no">✗</span> <span><strong>לא</strong> מתחבר למועדונים ולא מקליד סיסמאות. אין בו קוד שעושה את זה.</span></li>
+      <li><span class="mark no">✗</span> <span><strong>לא</strong> ממלא טפסים ולא לוחץ על כפתורי רכישה.</span></li>
+      <li><span class="mark no">✗</span> <span><strong>לא</strong> שולח שום דבר לשרת. הכל נשאר בדפדפן שלכם.</span></li>
+      <li><span class="mark yes">✓</span> <span>קורא עמודים שאתם <strong>כבר מחוברים אליהם</strong> — הדפדפן זוכר את ההתחברות שלכם.</span></li>
+      <li><span class="mark yes">✓</span> <span>עוצר ומבקש מכם להתחבר איפה שהסשן פג.</span></li>
+    </ul>
+
+    <p class="perm">
+      <strong>ההרשאות שהתוסף מבקש:</strong>
+      <code class="inline">storage</code> (לשמור מה שנאסף),
+      <code class="inline">tabs</code> (לפתוח ולסגור טאבים),
+      <code class="inline">scripting</code> (להזריק את הסורק),
+      <code class="inline">clipboardWrite</code> (להעתיק ללוח).
+      אין הרשאה שנוגעת בסיסמאות או בתעבורת רשת.
+    </p>
+    <p class="perm">
+      התוסף מוגבל ל-18 דומיינים של המועדונים שלכם בלבד. הוא לא יכול לקרוא
+      דואר, בנק, או כל אתר אחר. אפשר לאמת הכל בקובץ
+      <code class="inline">manifest.json</code> שבתוך ה-ZIP.
+    </p>
+  </div>
+
+  <div class="card">
+    <a class="btn primary" href="index.html" style="display:block;text-align:center;text-decoration:none;">← חזרה למערכת</a>
+    <a class="btn" href="capture.html" style="display:block;text-align:center;text-decoration:none;margin-top:8px;">אין לי מחשב — לכידה ידנית</a>
+  </div>
+
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 2400);
+  }
+
+  /* כתובת המערכת נגזרת מהכתובת הנוכחית, כדי שתהיה נכונה גם אם
+     האתר יעבור לדומיין אחר ולא תישאר כתובת מקודדת שמתיישנת. */
+  const appUrl = location.href.replace(/install\.html.*$/, 'index.html');
+  $('#app-url').value = appUrl;
+  $('#page-url').value = location.href;
+
+  function bindCopy(btnSel, inputSel) {
+    $(btnSel).addEventListener('click', () => {
+      const input = $(inputSel);
+      input.select();
+      const done = () => toast('הועתק');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done, () => {
+          document.execCommand('copy'); done();
+        });
+      } else {
+        document.execCommand('copy'); done();
+      }
+    });
+  }
+  bindCopy('#copy-app', '#app-url');
+  bindCopy('#copy-ext', '#ext-url');
+  bindCopy('#copy-url', '#page-url');
+
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    $('#mobile-warning').hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
