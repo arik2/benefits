@@ -49,7 +49,7 @@
 
 <main>
 
-  <!-- תוספי כרום לא קיימים בנייד. בלי האזהרה הזו המשתמש יוריד ZIP לטלפון ויתקע. -->
+  <!-- תוספי כרום לא קיימים בנייד. בלי האזהרה הזו המשתמש ינסה להתקין מהטלפון ויתקע. -->
   <div class="card" id="mobile-warning" hidden>
     <h2>⚠️ צריך מחשב</h2>
     <p class="muted">
@@ -69,16 +69,23 @@
 
   <div class="card">
     <h2>1. הורדה</h2>
-    <a class="dl" href="extension.zip" download>⬇️ הורדת התוסף</a>
-    <p class="muted small">קובץ ZIP קטן. אין צורך בחשבון GitHub.</p>
+    <p class="muted">
+      התוסף כבר נמצא אצלכם, בתיקיית <code>benefits/extension</code> שבמאגר
+      הפרטי. אין קובץ להורדה: דף ההורדה הציבורי בוטל יחד עם שאר מה שהיה
+      ציבורי, והתוסף מופץ מהמאגר בלבד.
+    </p>
+    <p class="muted small">
+      התוסף הוא <strong>גיבוי</strong>. הסריקה השבועית רצה בענן לבד, והוא
+      נחוץ רק אם מועדון מסוים לא נסרק ורוצים ללכוד ממנו ידנית.
+    </p>
   </div>
 
   <div class="card">
     <h2>2. התקנה בכרום</h2>
     <ol class="steps">
       <li>
-        <strong>חלצו את הקובץ</strong> שהורדתם (לחיצה ימנית ← "חלץ הכל").
-        תיווצר תיקייה בשם <code class="inline">hatavot-extension</code>.
+        <strong>אתרו את התיקייה</strong> <code class="inline">benefits/extension</code>
+        בעותק המקומי של המאגר.
       </li>
       <li>
         בכרום, הדביקו בשורת הכתובת:
@@ -91,7 +98,7 @@
       <li>הפעילו למעלה מימין את <strong>"מצב מפתחים"</strong>.</li>
       <li>לחצו <strong>"טעינת תוסף לא ארוז"</strong> (Load unpacked).</li>
       <li>
-        בחרו את התיקייה <code class="inline">hatavot-extension</code> —
+        בחרו את התיקייה <code class="inline">benefits/extension</code> —
         זו שיש בתוכה קובץ בשם <code class="inline">manifest.json</code>.
       </li>
     </ol>
@@ -143,7 +150,7 @@
     <p class="perm">
       התוסף מוגבל ל-18 דומיינים של המועדונים שלכם בלבד. הוא לא יכול לקרוא
       דואר, בנק, או כל אתר אחר. אפשר לאמת הכל בקובץ
-      <code class="inline">manifest.json</code> שבתוך ה-ZIP.
+      <code class="inline">manifest.json</code> שבתוך התיקייה.
     </p>
   </div>
 

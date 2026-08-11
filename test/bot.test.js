@@ -80,6 +80,18 @@ const run = (update, db) => handleUpdate(update, { db, engine: Engine, now: NOW 
   }
 
   {
+    /*
+     * ההפצה של התוסף עברה מדף הורדה ציבורי לבוט, כשהכל הפרטי נסגר.
+     */
+    const out = await run(message(ARIK, '/install'), newDb());
+    check('/install מסביר איך מתקינים את התוסף', /תוסף הדפדפן/.test(out[0].text));
+    check('/install אינו מפנה לכתובת ציבורית',
+      !/github\.io|http:\/\/|https:\/\//.test(out[0].text), out[0].text.slice(0, 60));
+    check('/install מופיע ברשימת הפקודות',
+      /\/install/.test((await run(message(ARIK, '/help'), newDb()))[0].text));
+  }
+
+  {
     const db = newDb();
     const out = await run(message(ARIK, '/status'), db);
     check('/status בלי נתונים מסביר מה לעשות', /עוד לא נאסף/.test(out[0].text));

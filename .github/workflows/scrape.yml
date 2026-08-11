@@ -1,0 +1,95 @@
+# סריקת המועדונים.
+#
+# רץ אצל GitHub ולא על המחשב של אריק, כפי שביקש. במאגר פרטי בתוכנית
+# החינמית יש 2,000 דקות בחודש; סריקה שבועית של 13 מועדונים צורכת
+# כ-60 דקות בחודש, כלומר 3% מהמכסה.
+#
+# שלוש דרכי הפעלה: תזמון שבועי, לחיצה בממשק, ופקודת /scan בבוט
+# (שמגיעה כ-repository_dispatch).
+
+name: סריקת מועדונים
+
+on:
+  schedule:
+    # ראשון ב-06:00 שעון ישראל (03:00 UTC בקיץ). התזמון השבועי גם
+    # מונע מפרויקט Supabase החינמי להיכבות אחרי שבוע ללא שימוש.
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'מועדון יחיד (ריק = כולם)'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [scrape]
+
+# הסורק אינו כותב למאגר. הרשאת קריאה בלבד מצמצמת את מה שטוקן
+# הריצה יכול לעשות אם משהו בתהליך יתנהג לא כצפוי.
+permissions:
+  contents: read
+
+# שתי סריקות במקביל היו נכנסות לאותן טבלאות ומבקשות שני קודים
+# במקביל, ואי אפשר לדעת איזה קוד שייך לאיזו ריצה.
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    # הריצה כוללת המתנה לקוד מאריק. חצי שעה מספיקה לכך בנחת, ועדיין
+    # עוצרת ריצה תקועה לפני שהיא שורפת מכסה.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: התקנת תלויות
+        run: npm ci
+
+      # הבדיקות רצות לפני הסריקה. סורק שבור שכותב זבל למסד גרוע
+      # מסורק שלא רץ, ובדיקת המיסוך היא זו שמונעת דליפת סיסמה ללוג.
+      - name: בדיקות
+        run: npm run test:unit
+
+      - name: התקנת כרום
+        run: npx playwright install --with-deps chromium
+
+      - name: סריקה
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SESSION_KEY: ${{ secrets.SESSION_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+
+          BEHATZDAA_USER: ${{ secrets.BEHATZDAA_USER }}
+          BEHATZDAA_PASSWORD: ${{ secrets.BEHATZDAA_PASSWORD }}
+          PAIS_USER: ${{ secrets.PAIS_USER }}
+          PAIS_PASSWORD: ${{ secrets.PAIS_PASSWORD }}
+          HTZONE_USER: ${{ secrets.HTZONE_USER }}
+          HTZONE_PASSWORD: ${{ secrets.HTZONE_PASSWORD }}
+          ELAL_USER: ${{ secrets.ELAL_USER }}
+          ELAL_PASSWORD: ${{ secrets.ELAL_PASSWORD }}
+          CAL_USER: ${{ secrets.CAL_USER }}
+          CAL_PASSWORD: ${{ secrets.CAL_PASSWORD }}
+          MAX_USER: ${{ secrets.MAX_USER }}
+          MAX_PASSWORD: ${{ secrets.MAX_PASSWORD }}
+          FLYCARD_USER: ${{ secrets.FLYCARD_USER }}
+          FLYCARD_PASSWORD: ${{ secrets.FLYCARD_PASSWORD }}
+        run: |
+          if [ -n "${{ inputs.only }}" ]; then
+            node scraper/run.js --only "${{ inputs.only }}"
+          else
+            node scraper/run.js
+          fi
+
+      # אין כאן שלב upload-artifact, וזה במכוון. צילום מסך או HTML
+      # של כישלון מכיל מסך מחובר: שם, ארבע ספרות של כרטיס ולעיתים
+      # יתרה. תוצרי ריצה נשמרים ונגישים אחר כך, ואין סיבה שמידע כזה
+      # יישב שם. האבחון נעשה מהלוג הממוסך ומטבלת scrape_runs.

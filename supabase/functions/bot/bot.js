@@ -105,7 +105,27 @@ const HELP = `<b>מה אפשר לשאול</b>
 <b>פקודות</b>
 /status — כמה נקודות ואיזו דרגה בכל מועדון
 /scan — לעדכן את ההטבות מהמועדונים
+/install — תוסף הדפדפן, לסריקה ידנית מהמחשב
 /help — ההודעה הזו`;
+
+/*
+ * התוסף הופץ פעם מדף הורדה ציבורי. הדף ירד יחד עם כל השאר, והתוסף
+ * עצמו הפך לגיבוי: הסריקה האוטומטית עושה את העבודה, והוא נשאר
+ * למקרה שמועדון מסוים לא נסרק ורוצים ללכוד ממנו ידנית.
+ */
+const INSTALL = `<b>🧩 תוסף הדפדפן</b>
+
+הסריקה האוטומטית רצה בענן ולא צריך אותו. הוא נשאר כגיבוי, למקרה
+שמועדון מסוים לא נסרק ורוצים ללכוד ממנו ידנית מהמחשב.
+
+<b>התקנה</b> (במחשב בלבד):
+1. במאגר הפרטי: הורידו את התיקייה <code>benefits/extension</code>
+2. כרום ← <code>chrome://extensions</code> ← הפעילו "מצב מפתח"
+3. "טעינת תוסף לא ארוז" ← בחרו את התיקייה
+4. התחברו למועדון, ולחצו על סמל התוסף
+
+התוסף קורא רק את מה שכבר מוצג לכם על המסך. הוא לא שומר סיסמאות,
+לא נוגע בטפסים ולא שולח דבר לשרת חיצוני.`;
 
 /* ---------- הלוגיקה הראשית ---------- */
 
@@ -173,6 +193,10 @@ async function handleUpdate(update, deps) {
     return [{ chatId, text: HELP }];
   }
 
+  if (/^\/install/.test(text)) {
+    return [{ chatId, text: INSTALL }];
+  }
+
   if (/^\/status/.test(text) || /^המצב שלי$/.test(text)) {
     const db2 = await db.loadDb();
     const status = await db.loadStatus();
@@ -212,4 +236,4 @@ async function handleUpdate(update, deps) {
   return out;
 }
 
-module.exports = { handleUpdate, formatPlan, formatStatus, choiceKeyboard, HELP };
+module.exports = { handleUpdate, formatPlan, formatStatus, choiceKeyboard, HELP, INSTALL };
