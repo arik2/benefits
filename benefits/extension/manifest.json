@@ -31,8 +31,7 @@
         "https://*.elal.co.il/*",
         "https://fox.co.il/*",
         "https://*.fox.co.il/*",
-        "https://*.onezerobank.com/*",
-        "http://localhost:8766/*"
+        "https://*.onezerobank.com/*"
       ],
       "js": ["noautorun.js", "capture.js", "content.js"],
       "run_at": "document_idle"

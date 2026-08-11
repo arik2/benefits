@@ -107,8 +107,11 @@ function createServer(options = {}) {
 
     if (p === '/public') return send(200, PUBLIC);
 
-    /* קובצי ה-HTML הסטטיים שכבר שימשו לבדיקות התוסף */
-    if (p.startsWith('/static/')) {
+    /*
+     * קובצי ה-HTML הסטטיים ששימשו לבדיקות התוסף. מוגשים גם מהשורש,
+     * כי כך התוסף פוגש אותם — ככתובת מועדון רגילה ולא כנתיב בדיקה.
+     */
+    if (p.endsWith('.html')) {
       const file = path.join(SITE, path.basename(p));
       if (fs.existsSync(file)) return send(200, fs.readFileSync(file));
       return send(404, 'not found');

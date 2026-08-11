@@ -1,0 +1,43 @@
+# הבדיקות, בכל דחיפה.
+#
+# ה-workflow הזה החליף את workflow הפריסה שנמחק. הפריסה ירדה כי אין
+# יותר אתר ציבורי, אבל הבדיקות שרצו בתוכה — ובפרט השמירה על כך
+# שהעותקים המיוצרים מעודכנים — עדיין נחוצות.
+
+name: בדיקות
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # הבדיקות שאינן דורשות דפדפן רצות ראשונות, כדי שכישלון פשוט
+      # יתגלה בעשר שניות ולא אחרי התקנת כרום.
+      - name: בדיקות ללא דפדפן
+        run: npm run test:unit
+
+      - name: התקנת כרום
+        run: npx playwright install --with-deps chromium
+
+      - name: בדיקות הסורק
+        run: node test/scraper.test.js
+
+      - name: בדיקות התוסף
+        run: node test/extension.test.js

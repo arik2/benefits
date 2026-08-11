@@ -20,6 +20,9 @@ const CLUB_PAGES = [
   { url: 'https://www.mafteach.co.il/', name: 'מפתח דיסקונט' },
   { url: 'https://www.isracard.co.il/flycard/private', name: 'פליי קארד' },
   { url: 'https://fox.co.il/pages/dream-card-%D7%94%D7%98%D7%91%D7%95%D7%AA-%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F', name: 'דרים קארד' },
+  { url: 'https://www.elal.com/he/PassengersInfo/Frequent-Flyer/Pages/default.aspx', name: 'אל על - הנוסע המתמיד' },
+  { url: 'https://www.discountbank.co.il/', name: 'בנק דיסקונט' },
+  { url: 'https://www.onezerobank.com/', name: 'ONE ZERO' },
 ];
 
 const PAGE_TIMEOUT_MS = 25000;
