@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>ההטבות שלנו</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+</head>
+<body>
+
+<!-- מסך כניסה -->
+<div id="gate" class="gate" hidden>
+  <form class="gate-box" id="gate-form">
+    <div class="gate-emoji">💳</div>
+    <h1>ההטבות שלנו</h1>
+    <p class="muted">הזינו את הקוד המשותף</p>
+    <input type="password" id="gate-input" inputmode="numeric" autocomplete="current-password" placeholder="קוד כניסה" aria-label="קוד כניסה">
+    <button type="submit" class="btn primary">כניסה</button>
+    <p id="gate-error" class="error" hidden>קוד שגוי</p>
+  </form>
+</div>
+
+<!-- האפליקציה -->
+<div id="app" hidden>
+
+  <header class="topbar">
+    <h1>💳 ההטבות שלנו</h1>
+    <span class="stamp" id="db-stamp"></span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="ask"     role="tab">שאלה</button>
+    <button class="tab"        data-tab="compare" role="tab">השוואה</button>
+    <button class="tab"        data-tab="browse"  role="tab">עיון</button>
+    <button class="tab"        data-tab="manage"  role="tab">ניהול</button>
+    <button class="tab"        data-tab="settings" role="tab">הגדרות</button>
+  </nav>
+
+  <main>
+
+    <!-- ===== שאלה חופשית — שורה אחת כמו בצ'אט ===== -->
+    <section id="panel-ask" class="panel active">
+      <div id="my-status"></div>
+      <div class="card chat-card">
+        <div class="chat-line">
+          <input type="text" id="ask-q" list="merchant-list" enterkeyhint="send"
+                 placeholder="למשל: קנייה בפוקס ב-400 שקל" autocomplete="off">
+          <button class="btn primary chat-send" id="ask-go" aria-label="שאל">➤</button>
+        </div>
+        <datalist id="merchant-list"></datalist>
+        <div class="parsed-line" id="ask-parsed" hidden></div>
+        <div class="chips" id="ask-examples"></div>
+      </div>
+      <div id="ask-answer"></div>
+      <div id="ask-results" class="results"></div>
+    </section>
+
+    <!-- ===== השוואה לפי קטגוריה ===== -->
+    <section id="panel-compare" class="panel">
+      <div class="card">
+        <label for="cmp-cat">קטגוריה</label>
+        <select id="cmp-cat"></select>
+        <div class="grid2">
+          <div>
+            <label for="cmp-amount">כמה תוציאו? (₪)</label>
+            <input type="number" id="cmp-amount" min="0" step="10" value="500">
+          </div>
+          <div>
+            <label for="cmp-date">תאריך</label>
+            <input type="date" id="cmp-date">
+          </div>
+        </div>
+        <button class="btn primary" id="cmp-go">מאיפה הכי כדאי?</button>
+      </div>
+      <div id="cmp-results" class="results"></div>
+    </section>
+
+    <!-- ===== עיון ===== -->
+    <section id="panel-browse" class="panel">
+      <div class="card">
+        <label for="browse-provider">סנן לפי מועדון / כרטיס</label>
+        <select id="browse-provider"><option value="">הכל</option></select>
+        <label class="checkline">
+          <input type="checkbox" id="browse-expiring"> הצג רק הטבות שפג תוקפן או שעומדות לפוג
+        </label>
+      </div>
+      <div id="browse-results" class="results"></div>
+    </section>
+
+    <!-- ===== ניהול ===== -->
+    <section id="panel-manage" class="panel">
+      <div class="card">
+        <h2 id="manage-title">הוספת הטבה</h2>
+        <p class="warn">אל תזינו כאן מספרי כרטיס, מספרי חבר, סיסמאות או כל פרט מזהה. הריפו ציבורי.</p>
+
+        <input type="hidden" id="f-id">
+
+        <label for="f-provider">מועדון / כרטיס *</label>
+        <select id="f-provider"></select>
+
+        <label for="f-title">כותרת ההטבה *</label>
+        <input type="text" id="f-title" placeholder="למשל: 15% הנחה ברמי לוי">
+
+        <label for="f-merchants">בתי עסק (מופרדים בפסיק)</label>
+        <input type="text" id="f-merchants" placeholder="פוקס, פוקס הום, ללין">
+        <p class="hint">שם החנות הוא מה שהופך את החיפוש לשימושי. מלאו אותו כשאפשר.</p>
+
+        <label for="f-categories">קטגוריות * (אפשר לבחור כמה)</label>
+        <select id="f-categories" multiple size="7"></select>
+
+        <label for="f-kind">סוג ההטבה *</label>
+        <select id="f-kind">
+          <option value="percent">אחוז הנחה</option>
+          <option value="cashback">אחוז החזר כספי</option>
+          <option value="fixed">סכום קבוע בשקלים</option>
+          <option value="bogo">1+1</option>
+          <option value="points">צבירת נקודות</option>
+          <option value="info">מידע בלבד (בלי חישוב)</option>
+        </select>
+
+        <label for="f-value"><span id="f-value-label">ערך</span></label>
+        <input type="number" id="f-value" step="0.01" min="0" value="10">
+
+        <div class="grid2">
+          <div>
+            <label for="f-cap">תקרה לעסקה (₪)</label>
+            <input type="number" id="f-cap" min="0" step="1" placeholder="ללא">
+          </div>
+          <div>
+            <label for="f-min">מינימום קנייה (₪)</label>
+            <input type="number" id="f-min" min="0" step="1" placeholder="0">
+          </div>
+        </div>
+
+        <label for="f-card">דורש תשלום בכרטיס מסוים?</label>
+        <input type="text" id="f-card" placeholder="למשל: כרטיס מועדון בהצדעה">
+
+        <label for="f-until">בתוקף עד</label>
+        <input type="date" id="f-until">
+
+        <fieldset class="variants">
+          <legend>הטבות שונות באותו מקום</legend>
+          <p class="hint">
+            כשיש כמה הטבות שתלויות במה שקונים או מתי — למשל 30% ביום הולדת
+            מול 10% רגיל — הוסיפו כאן שורה לכל אפשרות, והמערכת תשאל אתכם
+            במקום לנחש.
+          </p>
+          <div id="f-variants"></div>
+          <button type="button" class="btn" id="f-add-variant">הוסף אפשרות</button>
+        </fieldset>
+
+        <label for="f-conditions">תנאים והערות</label>
+        <textarea id="f-conditions" rows="3" placeholder="מה בדיוק ראיתם, ואיפה"></textarea>
+
+        <label for="f-source">קישור למקור</label>
+        <input type="url" id="f-source" placeholder="https://">
+
+        <label for="f-tags">תגיות (מופרדות בפסיק)</label>
+        <input type="text" id="f-tags" placeholder="רמי לוי, קניות, סופש">
+
+        <label for="f-status">סטטוס אימות *</label>
+        <select id="f-status">
+          <option value="verified">מאומת — ראיתי את זה בעצמי בחשבון</option>
+          <option value="unverified" selected>לאימות — עוד לא בדקתי</option>
+          <option value="example">דוגמה — רשומת הדגמה, לא הטבה אמיתית</option>
+        </select>
+
+        <div class="row">
+          <button class="btn primary" id="f-save">שמור</button>
+          <button class="btn" id="f-clear">נקה טופס</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>ייבוא מלכידה</h2>
+        <p class="muted">
+          הדביקו כאן את מה שהעתקתם בכלי הלכידה, ובחרו לאיזה מועדון וקטגוריה
+          לשייך. <a href="capture.html">איך עושים את זה?</a>
+        </p>
+        <textarea id="cap-paste" rows="4" placeholder='הדביקו כאן את התוכן שהועתק'></textarea>
+        <button class="btn" id="cap-parse">בדוק מה נקלט</button>
+        <div id="cap-preview"></div>
+      </div>
+
+      <div class="card">
+        <h2>גיבוי וסנכרון</h2>
+        <p class="muted">השינויים נשמרים בדפדפן הזה בלבד. כדי שגם בן/בת הזוג יראו אותם, השתמשו בסנכרון או בייצוא.</p>
+        <div class="row">
+          <button class="btn" id="btn-export">ייצוא לקובץ</button>
+          <button class="btn" id="btn-import">ייבוא מקובץ</button>
+          <input type="file" id="file-input" accept="application/json" hidden>
+        </div>
+        <div class="row">
+          <button class="btn" id="btn-sync">סנכרון ל-GitHub</button>
+          <button class="btn" id="btn-del-examples">מחיקת רשומות הדוגמה</button>
+          <button class="btn danger" id="btn-reset">איפוס לנתוני הבסיס</button>
+        </div>
+        <p id="sync-status" class="muted"></p>
+      </div>
+
+      <div class="card">
+        <h2>ההטבות שהוספתם או שיניתם</h2>
+        <div id="manage-list" class="results"></div>
+      </div>
+    </section>
+
+    <!-- ===== הגדרות ===== -->
+    <section id="panel-settings" class="panel">
+      <div class="card">
+        <h2>🧩 תוסף הדפדפן</h2>
+        <p class="muted">
+          סורק את כל המועדונים בלחיצה אחת ומביא גם את המצב האישי שלכם —
+          נקודות, דרגה, ומכסה חודשית שנותרה. מותקן במחשב, פעם אחת.
+        </p>
+        <a class="btn primary" href="install.html" style="display:block;text-align:center;text-decoration:none;">הוראות התקנה והורדה</a>
+      </div>
+
+      <div class="card">
+        <h2>שווי נקודה</h2>
+        <p class="muted">
+          שווי נקודה הוא הערכה, לא נתון רשמי. הוא משפיע על הדירוג בהשוואה, ולכן כדאי
+          לעדכן אותו לפי מה שאתם באמת מקבלים במימוש.
+        </p>
+        <label for="s-elal">שווי נקודת אל על (₪ לנקודה)</label>
+        <input type="number" id="s-elal" step="0.001" min="0">
+        <label for="s-max">שווי נקודת פינוק של מקס (₪ לנקודה)</label>
+        <input type="number" id="s-max" step="0.01" min="0">
+        <button class="btn primary" id="s-save">שמור הגדרות</button>
+      </div>
+
+      <div class="card">
+        <h2>סנכרון עם GitHub</h2>
+        <p class="muted">
+          מאפשר לשניכם לראות את אותם נתונים. נדרש טוקן אישי עם הרשאת כתיבה לריפו הזה בלבד.
+          הטוקן נשמר בדפדפן שלכם ולא נשלח לשום מקום מלבד GitHub.
+        </p>
+        <label for="s-token">GitHub Token</label>
+        <input type="password" id="s-token" placeholder="github_pat_...">
+        <label for="s-repo">ריפו</label>
+        <input type="text" id="s-repo" placeholder="arik2/benefits">
+        <label for="s-branch">ענף</label>
+        <input type="text" id="s-branch" placeholder="master">
+        <button class="btn primary" id="s-save-sync">שמור הגדרות סנכרון</button>
+        <button class="btn" id="s-pull">משוך עדכונים מהשרת</button>
+      </div>
+
+      <div class="card">
+        <h2>קוד כניסה</h2>
+        <p class="warn">
+          קוד הכניסה מונע כניסה מקרית בלבד. הוא לא הגנה אמיתית, כי כל הקוד של האתר
+          גלוי בדפדפן. אל תשמרו כאן שום דבר שלא היינו רוצים שיהיה ציבורי.
+        </p>
+        <label for="s-gate">שינוי קוד הכניסה</label>
+        <input type="text" id="s-gate" inputmode="numeric" placeholder="קוד חדש">
+        <button class="btn primary" id="s-save-gate">עדכן קוד</button>
+      </div>
+
+      <div class="card">
+        <h2>איך מוסיפים הטבה נכון</h2>
+        <ol class="howto">
+          <li>נכנסים לאתר או לאפליקציה של המועדון ורואים את ההטבה במו עינינו.</li>
+          <li>בלשונית "ניהול" ממלאים כותרת, קטגוריה, אחוז או סכום, ותקרה אם יש.</li>
+          <li>מסמנים סטטוס "מאומת" ומדביקים קישור למקור.</li>
+          <li>לוחצים "סנכרון ל-GitHub" כדי שגם בן/בת הזוג יראו.</li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p class="muted small">
+      הנתונים כאן הם עזר להחלטה בלבד. לפני רכישה גדולה כדאי לוודא את ההטבה מול המועדון עצמו.
+    </p>
+  </footer>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --line: #e2e8f0;
+  --brand: #1d4ed8;
+  --brand-ink: #ffffff;
+  --good: #047857;
+  --good-bg: #ecfdf5;
+  --warn: #b45309;
+  --warn-bg: #fffbeb;
+  --bad: #b91c1c;
+  --bad-bg: #fef2f2;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 6px 18px rgba(15, 23, 42, .05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1120;
+    --surface: #172033;
+    --ink: #e8edf7;
+    --ink-soft: #9aa8bf;
+    --line: #29344a;
+    --brand: #60a5fa;
+    --brand-ink: #0b1120;
+    --good: #34d399;
+    --good-bg: #06281f;
+    --warn: #fbbf24;
+    --warn-bg: #2c2208;
+    --bad: #f87171;
+    --bad-bg: #2b1114;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .5);
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* חייב לגבור על display שנקבע במחלקות, אחרת אלמנט מוסתר ממשיך לחסום קליקים */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Heebo", "Assistant", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2 { line-height: 1.3; }
+p { margin: .4em 0; }
+
+/* ---------- מסך כניסה ---------- */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  padding: 20px;
+  z-index: 50;
+}
+
+.gate-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+  width: min(360px, 100%);
+  text-align: center;
+}
+
+.gate-emoji { font-size: 44px; }
+.gate-box h1 { margin: 4px 0 2px; font-size: 22px; }
+.gate-box input { text-align: center; font-size: 20px; letter-spacing: 4px; }
+
+/* ---------- שלד ---------- */
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar h1 { margin: 0; font-size: 19px; }
+.stamp { font-size: 12px; color: var(--ink-soft); }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  position: sticky;
+  top: 49px;
+  z-index: 19;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab.active { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-weight: 600; }
+
+main { padding: 14px 12px 40px; max-width: 780px; margin: 0 auto; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+footer { padding: 0 16px 28px; max-width: 780px; margin: 0 auto; }
+
+/* ---------- כרטיסים וטפסים ---------- */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.card h2 { margin: 0 0 8px; font-size: 17px; }
+
+label {
+  display: block;
+  margin: 12px 0 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+label:first-of-type { margin-top: 0; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 16px; /* מונע זום אוטומטי ב-iOS */
+}
+textarea { resize: vertical; }
+select[multiple] { padding: 6px; }
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  margin-top: 12px;
+}
+.checkline input { width: auto; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+.btn {
+  flex: 1 1 auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 46px;
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); margin-top: 14px; }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- תוצאות ---------- */
+
+.results { display: flex; flex-direction: column; gap: 10px; }
+
+.result {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  border-inline-start: 5px solid var(--line);
+}
+.result.best { border-inline-start-color: var(--good); }
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.result-title { margin: 0; font-size: 16px; font-weight: 700; }
+.result-provider { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+.saving {
+  text-align: center;
+  flex: 0 0 auto;
+  background: var(--good-bg);
+  color: var(--good);
+  border-radius: 10px;
+  padding: 6px 10px;
+  min-width: 84px;
+}
+.saving .num { display: block; font-size: 17px; font-weight: 800; }
+.saving .cap { display: block; font-size: 11px; opacity: .85; }
+.saving.flat { background: var(--bg); color: var(--ink-soft); }
+
+.badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.badge {
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+}
+.badge.verified { background: var(--good-bg); color: var(--good); }
+.badge.unverified { background: var(--warn-bg); color: var(--warn); }
+.badge.expiring { background: var(--warn-bg); color: var(--warn); }
+.badge.expired { background: var(--bad-bg); color: var(--bad); }
+.badge.card { background: var(--bg); color: var(--ink-soft); border-color: var(--line); }
+.badge.rank { background: var(--good); color: #fff; font-weight: 700; }
+
+.result-body { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+
+.result.is-example { opacity: .82; border-inline-start-style: dashed; }
+.badge.example { background: var(--bg); color: var(--ink-soft); border-color: var(--line); }
+
+.saving.bound { background: var(--warn-bg); color: var(--warn); }
+
+/* בתי עסק */
+.merchants { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+.merchant {
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--ink-soft);
+}
+
+/* שאלת ההבהרה */
+.choice {
+  margin-top: 11px;
+  padding: 11px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+}
+.choice.chosen { border-style: solid; }
+.choice-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.choice-chip { text-align: start; }
+.chip-val { font-weight: 700; color: var(--good); margin-inline-start: 4px; }
+
+.note {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 13px;
+}
+
+/* עורך האפשרויות */
+.variants {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 14px 0 0;
+}
+.variants legend { font-size: 14px; font-weight: 600; color: var(--ink-soft); padding: 0 6px; }
+
+.variant-row {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 9px;
+  background: var(--bg);
+}
+.variant-row input, .variant-row select { margin-bottom: 7px; }
+.variant-head { display: flex; gap: 8px; align-items: center; }
+.variant-head .v-label { flex: 1; }
+
+.days { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.days-label { font-size: 12px; color: var(--ink-soft); width: 100%; }
+.day { display: flex; align-items: center; gap: 3px; margin: 0; font-size: 12px; font-weight: 400; }
+.day input { width: auto; }
+
+.hint { font-size: 12px; color: var(--ink-soft); margin: 4px 0 0; }
+
+/* מצב צ'אט — שורה אחת ותוכנית קנייה */
+.chat-line { display: flex; gap: 8px; }
+.chat-line input { flex: 1; margin: 0; font-size: 16px; }
+.chat-send { width: 52px; flex: none; padding: 0; font-size: 18px; }
+.parsed-line { font-size: 13px; color: var(--ink-soft); margin-top: 8px; }
+
+.plan {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 15px;
+  margin-top: 12px;
+  border-inline-start: 4px solid var(--good);
+  box-shadow: var(--shadow);
+}
+.plan.ask { border-inline-start-color: var(--warn); }
+.plan-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.plan-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--good);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.plan-saving { font-size: 17px; font-weight: 800; color: var(--good); white-space: nowrap; }
+.plan-title { font-size: 15px; font-weight: 700; margin-top: 6px; line-height: 1.45; }
+.plan-provider { font-weight: 400; color: var(--ink-soft); }
+.plan-steps { margin: 10px 0 0; padding-inline-start: 20px; font-size: 14px; line-height: 1.65; }
+.plan-steps li { margin-bottom: 4px; }
+.plan-caveat {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.plan-note {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.plan-alts { font-size: 13px; color: var(--ink-soft); margin-top: 10px; padding: 0 4px; }
+.plan-alts ul { margin: 4px 0 0; padding-inline-start: 18px; }
+.plan-alts li { margin-bottom: 3px; }
+
+/* ייבוא מלכידה */
+.cap-box { margin-top: 12px; }
+.cap-list {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px 10px;
+  margin-bottom: 4px;
+}
+.cap-row {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-weight: 400;
+  margin: 0;
+  font-size: 13px;
+}
+.cap-row:last-child { border-bottom: none; }
+.cap-row input { width: auto; margin-top: 3px; }
+.cap-val { font-weight: 700; color: var(--good); white-space: nowrap; min-width: 56px; }
+.cap-txt { color: var(--ink); line-height: 1.45; }
+.cap-txt em { display: block; color: var(--ink-soft); font-size: 12px; font-style: normal; margin-top: 2px; }
+.result-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 28px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+
+/* ---------- שונות ---------- */
+
+.muted { color: var(--ink-soft); font-size: 14px; }
+.small { font-size: 12px; }
+.error { color: var(--bad); font-size: 14px; }
+
+.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+
+.howto { margin: 8px 0 0; padding-inline-start: 20px; color: var(--ink-soft); font-size: 14px; }
+.howto li { margin-bottom: 6px; }
+
+.toast {
+  position: fixed;
+  inset-inline: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink);
+  color: var(--bg);
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-align: center;
+  z-index: 60;
+  box-shadow: var(--shadow);
+}
+
+@media (min-width: 560px) {
+  .toast { inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%); min-width: 280px; }
+}
+
+/* המצב שלי */
+.ms-card { border-inline-start: 4px solid var(--brand); }
+.ms-head { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 9px; }
+.ms-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.ms-row:last-of-type { border-bottom: none; }
+.ms-name { color: var(--ink-soft); white-space: nowrap; }
+.ms-vals { text-align: start; }
+.ms-alert {
+  margin-top: 10px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.status-capture {
+  margin: 12px 0;
+  padding: 11px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}

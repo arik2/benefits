@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "ההטבות שלנו — לכידה",
+  "version": "1.0",
+  "description": "לוכד הטבות ממועדוני הלקוחות שאתם מחוברים אליהם ושולח אותן למערכת ההטבות המשפחתית. קורא בלבד — לא מבצע שום פעולה בחשבון.",
+  "action": {
+    "default_title": "לכידת הטבות",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "tabs", "clipboardWrite", "scripting"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.htzone.co.il/*",
+        "https://*.dts.co.il/*",
+        "https://be-plus.co.il/*",
+        "https://*.be-plus.co.il/*",
+        "https://paisplus.co.il/*",
+        "https://*.paisplus.co.il/*",
+        "https://*.pais.co.il/*",
+        "https://*.max.co.il/*",
+        "https://*.cal-online.co.il/*",
+        "https://*.mafteach.co.il/*",
+        "https://*.discountbank.co.il/*",
+        "https://*.isracard.co.il/*",
+        "https://*.americanexpress.co.il/*",
+        "https://*.elal.com/*",
+        "https://*.elal.co.il/*",
+        "https://fox.co.il/*",
+        "https://*.fox.co.il/*",
+        "https://*.onezerobank.com/*",
+        "http://localhost:8766/*"
+      ],
+      "js": ["noautorun.js", "capture.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
